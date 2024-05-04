@@ -1,0 +1,15 @@
+{
+    "name": "piccologs",
+    "version": "0.1.0",
+    "description": "Simple CLI tool for generating changelogs; inspired by changesets",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "run": "node src/run.js"
+    },
+    "dependencies": {
+        "@clack/prompts": "0.7.0",
+        "human-id": "4.1.1",
+        "picocolors": "1.0.0"
+    }
+}

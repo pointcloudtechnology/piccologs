@@ -1,2 +1,3 @@
 # piccologs
-Simple CLI tool to generate changelogs; inspired by changesets
+
+Simple CLI tool for generating changelogs; inspired by [changesets](https://github.com/changesets/changesets)
