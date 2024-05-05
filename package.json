@@ -4,8 +4,13 @@
     "description": "Simple CLI tool for generating changelogs; inspired by changesets",
     "private": true,
     "type": "module",
+    "bin": {
+        "picco": "bin/picco.mjs"
+    },
     "scripts": {
-        "run": "node src/run.js"
+        "init": "npx picco init",
+        "add": "npx picco add",
+        "version": "npx picco version"
     },
     "dependencies": {
         "@clack/prompts": "0.7.0",
