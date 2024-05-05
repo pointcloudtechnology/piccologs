@@ -7,7 +7,7 @@ export const CHANGE_CATEGORIES = {
     bugfix: "Bug Fixes",
     refactor: "Refactoring",
     performance: "Performance Improvements",
-    update: "Dependency Updates",
+    dependencies: "Dependencies",
     removal: "Removals",
     migration: "Migration Steps",
     documentation: "Documentation",
@@ -19,7 +19,7 @@ export const CATEGORIES_ICONS = {
     bugfix: "🐛",
     refactor: "♻️",
     performance: "⚡️",
-    update: "⬆️",
+    dependencies: "📦️",
     removal: "🔥",
     migration: "🏗",
     documentation: "📝",
@@ -27,13 +27,26 @@ export const CATEGORIES_ICONS = {
 };
 
 export const CATEGORIES_PLACEHOLDERS = {
-    feature: "Implement a breathtaking, world-changing feature (#42069)",
-    bugfix: "Fix the most complicated bug so far (#42069)",
-    refactor: "Refactor code from 5 years ago (#42069)",
+    feature: "Implement a breathtaking, world-changing feature (#42)",
+    bugfix: "Fix the most complicated bug so far (#69)",
+    refactor: "Refactor code from 5 years ago (#420)",
     performance: `Improve code to be ${pc.italic("blazingly fast")} (#42069)`,
-    update: "Update Jest from v13.0.7 -> v69.4.20 (#42069)",
-    removal: "Remove unused code from existence (#42069)",
+    dependencies: "Update Jest from v13.0.7 -> v69.4.20 (#69420)",
+    removal: "Remove unused code from existence (#1337)",
     migration: "Run `rm -rf /`",
-    documentation: "Add comment to remind my future-self what this code does (#42069)",
+    documentation: "Add comment to remind my future-self what this code does (#7353)",
     other: "¯\\_(ツ)_/¯",
 };
+
+/** @type {(keyof typeof CHANGE_CATEGORIES)[]} */
+export const CATEGORIES_ORDER = [
+    "feature",
+    "bugfix",
+    "performance",
+    "removal",
+    "refactor",
+    "dependencies",
+    "documentation",
+    "other",
+    "migration",
+];

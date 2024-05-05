@@ -2,6 +2,7 @@ import { argv, cwd, exit } from "node:process";
 
 import { init } from "./commands/init.js";
 import { add } from "./commands/add.js";
+import { version } from "./commands/version.js";
 
 export async function run() {
     const rootDir = cwd();
@@ -17,15 +18,11 @@ export async function run() {
             break;
 
         case "version":
-            console.log("execute command version")
-            break;
-
-        case "commit":
-            console.log("execute command commit")
+            await version(rootDir);
             break;
 
         default:
-            console.log("usage: picco <init|add|version|commit>");
+            console.log("usage: picco <init|add|version>");
             exit(1);
     }
 }
