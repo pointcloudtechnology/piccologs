@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { writeFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { exit } from "node:process";
 import { intro, outro, isCancel, cancel, select, text } from "@clack/prompts";
 import { humanId } from "human-id";
@@ -48,7 +48,7 @@ export async function add(cwd) {
     }
 
     const summary = await text({
-        message: `Please enter a ${pc.green(pc.bold("summary"))} of your change`,
+        message: `Please enter a ${pc.green(pc.bold("summary"))} of your change (use | as line separators)`,
         placeholder: CATEGORIES_PLACEHOLDERS[category],
         validate(value) {
             if (value.length === 0) {
@@ -72,7 +72,7 @@ export async function add(cwd) {
         logId = generateLogId();
     }
 
-    const logContent = generateLogContent(category, summary);
+    const logContent = generateLogContent(category, summary.split("|").join("\n"));
 
     await writeFile(resolve(piccoPath, `${logId}.md`), logContent);
 
