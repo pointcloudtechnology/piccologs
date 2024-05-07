@@ -1,9 +1,27 @@
 {
-    "name": "piccologs",
+    "name": "@pointcloudtechnology/piccologs",
     "version": "0.1.0",
     "description": "Simple CLI tool for generating changelogs; inspired by changesets",
-    "private": true,
+    "keywords": [
+        "changelogs"
+    ],
+    "author": "Point Cloud Technology GmbH",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/pointcloudtechnology/piccologs"
+    },
     "type": "module",
+    "module": "index.js",
+    "exports": {
+        ".": {
+            "import": "./index.js"
+        }
+    },
+    "files": [
+        "bin",
+        "src"
+    ],
     "bin": {
         "picco": "bin/picco.mjs"
     },
