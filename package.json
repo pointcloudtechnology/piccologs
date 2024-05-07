@@ -9,7 +9,7 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/pointcloudtechnology/piccologs"
+        "url": "git+https://github.com/pointcloudtechnology/piccologs.git"
     },
     "type": "module",
     "module": "index.js",
