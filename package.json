@@ -20,7 +20,8 @@
     },
     "files": [
         "bin",
-        "src"
+        "src",
+        "index.js"
     ],
     "bin": {
         "picco": "bin/picco.mjs"
