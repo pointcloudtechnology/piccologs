@@ -87,19 +87,21 @@ function buildReleaseLog(versionTag, releaseLog) {
 async function writeChangeLog(cwd, releaseLog) {
     const changelogPath = resolve(cwd, "CHANGELOG.md");
     const tempPath = resolve(cwd, "_CHANGELOG.md.temp");
-    const insertMarker = "## [Unreleased]";
+    const insertMarker = /## \[.+\]/;
+    let isReleaseLogWritten = false;
 
     const changelog = await open(changelogPath);
     const templog = await open(tempPath, "w");
     const tempWriter = templog.createWriteStream({ encoding: "utf8" });
 
     for await (const line of changelog.readLines()) {
-        tempWriter.write(line + "\n");
-
-        if (line === insertMarker) {
-            tempWriter.write("\n");
+        if (!isReleaseLogWritten && insertMarker.test(line)) {
             tempWriter.write(releaseLog);
+            tempWriter.write("\n");
+            isReleaseLogWritten = true;
         }
+
+        tempWriter.write(line + "\n");
     }
 
     tempWriter.close();
