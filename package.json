@@ -35,5 +35,8 @@
         "@clack/prompts": "0.7.0",
         "human-id": "4.1.1",
         "picocolors": "1.0.0"
+    },
+    "publishConfig": {
+        "access": "public"
     }
 }
