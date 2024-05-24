@@ -18,3 +18,13 @@ You may edit the generated piccolog file in your preferred editor and check it i
 
 Collects all piccologs and writes them nicely formatted to your `CHANGELOG.md` under a given version tag.
 You may edit the updated `CHANGELOG.md` in your preferred editor and commit it to version control.
+
+### `picco list`
+
+#### (alias: `picco ls`)
+
+Collects all piccologs and outputs them to the console. You can optionally use a `--type=<type>` argument to output only changes of a certain type, e.g.,
+
+```shell
+$ npx picco ls --type=migration
+```
