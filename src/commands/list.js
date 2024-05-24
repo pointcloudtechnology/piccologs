@@ -79,6 +79,6 @@ export async function list(cwd, categories) {
         }
     }
 
-    log.message(buildLog(changeLog).trim());
+    log.message(buildLog(changeLog).trim() || "Nothing to show!");
     outro(pc.italic(pc.green(" Have a nice day! ")));
 }
