@@ -5,13 +5,12 @@ import { intro, outro, isCancel, cancel, multiselect, text, spinner } from "@cla
 import pc from "picocolors";
 
 import { CATEGORIES_ICONS, CATEGORIES_ORDER, CHANGE_CATEGORIES, PICCO_DIR } from "../constants.js";
+import { parsePiccoLog } from "../parser.js";
 
 function onCancel() {
     cancel("Have a nice day!");
     exit(0);
 }
-
-const LOG_PARSE_REGEX = /\s*---([^]*?)\n\s*---(\s*(?:\n|$)[^]*)/;
 
 /** @returns {string} */
 function getDateVersion() {
@@ -21,27 +20,6 @@ function getDateVersion() {
     const day = now.getDate().toString().padStart(2, "0");
 
     return `${year}-${month}-${day}`;
-}
-
-/**
- * @param {string} logContents
- * @returns {{ category: keyof typeof CHANGE_CATEGORIES; summary: string[]; }}
- */
-function parsePiccoLog(logContents) {
-    const parseResult = LOG_PARSE_REGEX.exec(logContents);
-
-    if (!parseResult) {
-        throw new Error(`could not parse piccolog - invalid frontmatter: ${logContents}`);
-    }
-
-    const [, rawMetadata, rawSummary] = parseResult;
-    const metadata = Object.fromEntries(rawMetadata.trim().split("\n").map((row) => row.split(": ")));
-    const summary = rawSummary.trim().split("\n");
-
-    return {
-        category: metadata.category,
-        summary,
-    };
 }
 
 /**
