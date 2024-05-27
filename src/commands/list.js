@@ -60,8 +60,20 @@ export async function list(cwd, categories) {
     intro(pc.bgCyan(pc.black(` picco list `)));
 
     const allCategories = Object.keys(CHANGE_CATEGORIES);
+    const unknownCategories = categories.filter((category) => !allCategories.includes(category));
     const filteredCategories = categories.filter((category) => allCategories.includes(category));
     const categoriesToLog = filteredCategories.length > 0 ? filteredCategories : allCategories;
+
+    if (unknownCategories.length > 0) {
+        /** @type {(categories: string[]) => string} */
+        const stringifyCategories = (categories) => categories.map((cat) => `"${cat}"`).join(", ");
+        const types = unknownCategories.length > 1 ? "types" : "type";
+
+        log.warn(
+            pc.yellow(`Ignoring unknown category ${types} ${stringifyCategories(unknownCategories)}\n`)
+            + `Valid types are: ${stringifyCategories(allCategories)}`
+        );
+    }
 
     /** @type {Record<keyof typeof CHANGE_CATEGORIES, Set<string>>} */
     const changeLog = Object.fromEntries(categoriesToLog.map((category) => [category, new Set()]));
@@ -79,6 +91,6 @@ export async function list(cwd, categories) {
         }
     }
 
-    log.message(buildLog(changeLog).trim() || "Nothing to show!");
+    log.info(buildLog(changeLog).trim() || "Nothing to show!");
     outro(pc.italic(pc.green(" Have a nice day! ")));
 }
