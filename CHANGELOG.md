@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0]
+
+### ✨ Features
+
+* Add new categories for UI and API changes (#6)
+
+
 ## [0.2.1]
 
 ### 🐛 Bug Fixes
