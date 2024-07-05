@@ -5,6 +5,8 @@ export const PICCO_DIR = ".piccologs";
 export const CHANGE_CATEGORIES = {
     feature: "Features",
     bugfix: "Bug Fixes",
+    ui: "UI Changes",
+    api: "API Changes",
     refactor: "Refactoring",
     performance: "Performance Improvements",
     dependencies: "Dependencies",
@@ -17,6 +19,8 @@ export const CHANGE_CATEGORIES = {
 export const CATEGORIES_ICONS = {
     feature: "✨",
     bugfix: "🐛",
+    ui: "🖼️",
+    api: "🔌",
     refactor: "♻️",
     performance: "⚡️",
     dependencies: "📦️",
@@ -29,6 +33,8 @@ export const CATEGORIES_ICONS = {
 export const CATEGORIES_PLACEHOLDERS = {
     feature: "Implement a breathtaking, world-changing feature (#42)",
     bugfix: "Fix the most complicated bug so far (#69)",
+    ui: "Cast some CSS magic spells (#314)",
+    api: "Change route to return status code 418 (#9001)",
     refactor: "Refactor code from 5 years ago (#420)",
     performance: `Improve code to be ${pc.italic("blazingly fast")} (#42069)`,
     dependencies: "Update Jest from v13.0.7 -> v69.4.20 (#69420)",
@@ -42,6 +48,8 @@ export const CATEGORIES_PLACEHOLDERS = {
 export const CATEGORIES_ORDER = [
     "feature",
     "bugfix",
+    "ui",
+    "api",
     "performance",
     "removal",
     "refactor",
