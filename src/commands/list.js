@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { exit } from "node:process";
+
 import { intro, outro, log } from "@clack/prompts";
 import pc from "picocolors";
 
@@ -13,19 +14,19 @@ import { parsePiccoLog } from "../parser.js";
  * @returns {string}
  */
 function buildLogCategory(category, changes) {
-    if (changes.size === 0) {
-        return "";
-    }
+	if (changes.size === 0) {
+		return "";
+	}
 
-    let categoryLog = pc.bold(pc.cyan(`${CHANGE_CATEGORIES[category]}\n`));
+	let categoryLog = pc.bold(pc.cyan(`${CHANGE_CATEGORIES[category]}\n`));
 
-    for (const change of changes) {
-        categoryLog += `• ${change}\n`;
-    }
+	for (const change of changes) {
+		categoryLog += `• ${change}\n`;
+	}
 
-    categoryLog += "\n";
+	categoryLog += "\n";
 
-    return categoryLog;
+	return categoryLog;
 }
 
 /**
@@ -33,15 +34,15 @@ function buildLogCategory(category, changes) {
  * @returns {string}
  */
 function buildLog(changeLog) {
-    let finalLog = "";
+	let finalLog = "";
 
-    for (const category of CATEGORIES_ORDER) {
-        if (category in changeLog) {
-            finalLog += buildLogCategory(category, changeLog[category]);
-        }
-    }
+	for (const category of CATEGORIES_ORDER) {
+		if (category in changeLog) {
+			finalLog += buildLogCategory(category, changeLog[category]);
+		}
+	}
 
-    return finalLog;
+	return finalLog;
 }
 
 /**
@@ -49,48 +50,49 @@ function buildLog(changeLog) {
  * @param {string[]} categories List of categories to include into the logged output
  */
 export async function list(cwd, categories) {
-    const piccoPath = resolve(cwd, PICCO_DIR);
-    const piccologs = (await readdir(piccoPath)).filter((fileName) => fileName.endsWith(".md"));
+	const piccoPath = resolve(cwd, PICCO_DIR);
+	const piccologs = (await readdir(piccoPath)).filter((fileName) => fileName.endsWith(".md"));
 
-    if (piccologs.length === 0) {
-        console.log("No piccologs found");
-        exit(0);
-    }
+	if (piccologs.length === 0) {
+		console.log("No piccologs found");
+		exit(0);
+	}
 
-    intro(pc.bgCyan(pc.black(` picco list `)));
+	intro(pc.bgCyan(pc.black(` picco list `)));
 
-    const allCategories = Object.keys(CHANGE_CATEGORIES);
-    const unknownCategories = categories.filter((category) => !allCategories.includes(category));
-    const filteredCategories = categories.filter((category) => allCategories.includes(category));
-    const categoriesToLog = filteredCategories.length > 0 ? filteredCategories : allCategories;
+	const allCategories = Object.keys(CHANGE_CATEGORIES);
+	const unknownCategories = categories.filter((category) => !allCategories.includes(category));
+	const filteredCategories = categories.filter((category) => allCategories.includes(category));
+	const categoriesToLog = filteredCategories.length > 0 ? filteredCategories : allCategories;
 
-    if (unknownCategories.length > 0) {
-        /** @type {(categories: string[]) => string} */
-        const stringifyCategories = (categories) => categories.map((cat) => `"${cat}"`).join(", ");
-        const types = unknownCategories.length > 1 ? "types" : "type";
+	if (unknownCategories.length > 0) {
+		/** @type {(categories: string[]) => string} */
+		const stringifyCategories = (categories) => categories.map((cat) => `"${cat}"`).join(", ");
+		const types = unknownCategories.length > 1 ? "types" : "type";
 
-        log.warn(
-            pc.yellow(`Ignoring unknown category ${types} ${stringifyCategories(unknownCategories)}\n`)
-            + `Valid types are: ${stringifyCategories(allCategories)}`
-        );
-    }
+		log.warn(
+			pc.yellow(
+				`Ignoring unknown category ${types} ${stringifyCategories(unknownCategories)}\n`,
+			) + `Valid types are: ${stringifyCategories(allCategories)}`,
+		);
+	}
 
-    /** @type {Record<keyof typeof CHANGE_CATEGORIES, Set<string>>} */
-    const changeLog = Object.fromEntries(categoriesToLog.map((category) => [category, new Set()]));
+	/** @type {Record<keyof typeof CHANGE_CATEGORIES, Set<string>>} */
+	const changeLog = Object.fromEntries(categoriesToLog.map((category) => [category, new Set()]));
 
-    for (const logName of piccologs) {
-        const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });
-        const { category, summary } = parsePiccoLog(logContents);
+	for (const logName of piccologs) {
+		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });
+		const { category, summary } = parsePiccoLog(logContents);
 
-        if (!categoriesToLog.includes(category)) {
-            continue;
-        }
+		if (!categoriesToLog.includes(category)) {
+			continue;
+		}
 
-        for (const line of summary) {
-            changeLog[category].add(line);
-        }
-    }
+		for (const line of summary) {
+			changeLog[category].add(line);
+		}
+	}
 
-    log.info(buildLog(changeLog).trim() || "Nothing to show!");
-    outro(pc.italic(pc.green(" Have a nice day! ")));
+	log.info(buildLog(changeLog).trim() || "Nothing to show!");
+	outro(pc.italic(pc.green(" Have a nice day! ")));
 }
