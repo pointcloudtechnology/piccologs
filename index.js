@@ -1,1 +1,3 @@
-export { run } from "./src/run.js";
+#!/usr/bin/env node
+
+import "./dist/index.js";

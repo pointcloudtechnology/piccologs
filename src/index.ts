@@ -5,7 +5,7 @@ import { init } from "./commands/init.js";
 import { list } from "./commands/list.js";
 import { version } from "./commands/version.js";
 
-export async function run() {
+async function run() {
 	const rootDir = cwd();
 	const command = argv[2];
 
@@ -37,3 +37,5 @@ export async function run() {
 			exit(1);
 	}
 }
+
+await run();
