@@ -4,12 +4,12 @@ import { dirname, resolve } from "node:path";
 
 import pc from "picocolors";
 
-import { PICCO_DIR } from "../constants.js";
+import { PICCO_DIR } from "../constants";
 
 /**
- * @param {string} cwd Current working directory
+ * @param cwd Current working directory
  */
-export async function init(cwd) {
+export async function init(cwd: string) {
 	const keepFilePath = resolve(cwd, PICCO_DIR, ".gitkeep");
 
 	if (existsSync(keepFilePath)) {

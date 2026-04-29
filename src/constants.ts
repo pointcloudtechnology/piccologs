@@ -44,8 +44,7 @@ export const CATEGORIES_PLACEHOLDERS = {
 	other: "¯\\_(ツ)_/¯",
 };
 
-/** @type {(keyof typeof CHANGE_CATEGORIES)[]} */
-export const CATEGORIES_ORDER = [
+export const CATEGORIES_ORDER: Array<keyof typeof CHANGE_CATEGORIES> = [
 	"feature",
 	"bugfix",
 	"ui",

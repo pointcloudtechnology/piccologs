@@ -1,10 +1,11 @@
+import type { CHANGE_CATEGORIES } from "./constants";
+
 const LOG_PARSE_REGEX = /\s*---([^]*?)\n\s*---(\s*(?:\n|$)[^]*)/;
 
-/**
- * @param {string} logContents
- * @returns {{ category: keyof typeof CHANGE_CATEGORIES; summary: string[]; }}
- */
-export function parsePiccoLog(logContents) {
+export function parsePiccoLog(logContents: string): {
+	category: keyof typeof CHANGE_CATEGORIES;
+	summary: string[];
+} {
 	const parseResult = LOG_PARSE_REGEX.exec(logContents);
 
 	if (!parseResult) {

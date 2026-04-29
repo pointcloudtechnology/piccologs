@@ -5,16 +5,15 @@ import { exit } from "node:process";
 import { intro, outro, isCancel, cancel, multiselect, text, spinner } from "@clack/prompts";
 import pc from "picocolors";
 
-import { CATEGORIES_ICONS, CATEGORIES_ORDER, CHANGE_CATEGORIES, PICCO_DIR } from "../constants.js";
-import { parsePiccoLog } from "../parser.js";
+import { CATEGORIES_ICONS, CATEGORIES_ORDER, CHANGE_CATEGORIES, PICCO_DIR } from "../constants";
+import { parsePiccoLog } from "../parser";
 
 function onCancel() {
 	cancel("Have a nice day!");
 	exit(0);
 }
 
-/** @returns {string} */
-function getDateVersion() {
+function getDateVersion(): string {
 	const now = new Date();
 	const year = now.getFullYear();
 	const month = (now.getMonth() + 1).toString().padStart(2, "0");
@@ -23,12 +22,10 @@ function getDateVersion() {
 	return `${year}-${month}-${day}`;
 }
 
-/**
- * @param {keyof typeof CHANGE_CATEGORIES} category
- * @param {Set<string>} changes
- * @returns {string}
- */
-function buildReleaseCategory(category, changes) {
+function buildReleaseCategory(
+	category: keyof typeof CHANGE_CATEGORIES,
+	changes: Set<string>,
+): string {
 	if (changes.size === 0) {
 		return "";
 	}
@@ -44,12 +41,10 @@ function buildReleaseCategory(category, changes) {
 	return categoryLog;
 }
 
-/**
- * @param {string} versionTag
- * @param {Record<keyof typeof CHANGE_CATEGORIES, Set<string>>} releaseLog
- * @returns {string}
- */
-function buildReleaseLog(versionTag, releaseLog) {
+function buildReleaseLog(
+	versionTag: string,
+	releaseLog: Record<keyof typeof CHANGE_CATEGORIES, Set<string>>,
+): string {
 	let finalReleaseLog = `## [${versionTag}]\n\n`;
 
 	for (const category of CATEGORIES_ORDER) {
@@ -59,19 +54,15 @@ function buildReleaseLog(versionTag, releaseLog) {
 	return finalReleaseLog;
 }
 
-/**
- * @param {string} cwd
- * @param {string} releaseLog
- */
-async function writeChangeLog(cwd, releaseLog) {
+async function writeChangeLog(cwd: string, releaseLog: string) {
 	const changelogPath = resolve(cwd, "CHANGELOG.md");
 	const tempPath = resolve(cwd, "_CHANGELOG.md.temp");
 	const insertMarker = /## \[.+\]/;
 	let isReleaseLogWritten = false;
 
 	const changelog = await open(changelogPath);
-	const templog = await open(tempPath, "w");
-	const tempWriter = templog.createWriteStream({ encoding: "utf8" });
+	const tempLog = await open(tempPath, "w");
+	const tempWriter = tempLog.createWriteStream({ encoding: "utf8" });
 
 	for await (const line of changelog.readLines()) {
 		if (!isReleaseLogWritten && insertMarker.test(line)) {
@@ -85,16 +76,16 @@ async function writeChangeLog(cwd, releaseLog) {
 
 	tempWriter.close();
 	await changelog.close();
-	await templog.close();
+	await tempLog.close();
 
 	await copyFile(tempPath, changelogPath);
 	await rm(tempPath);
 }
 
 /**
- * @param {string} cwd Current working directory
+ * @param cwd Current working directory
  */
-export async function version(cwd) {
+export async function version(cwd: string) {
 	const piccoPath = resolve(cwd, PICCO_DIR);
 	const piccologs = (await readdir(piccoPath)).filter((fileName) => fileName.endsWith(".md"));
 
@@ -117,10 +108,9 @@ export async function version(cwd) {
 		return onCancel();
 	}
 
-	/** @type {Record<keyof typeof CHANGE_CATEGORIES, Set<string>>} */
-	const releaseLog = Object.fromEntries(
+	const releaseLog: Record<keyof typeof CHANGE_CATEGORIES, Set<string>> = Object.fromEntries(
 		Object.keys(CHANGE_CATEGORIES).map((category) => [category, new Set()]),
-	);
+	) as Record<keyof typeof CHANGE_CATEGORIES, Set<string>>;
 
 	for (const logName of piccologs) {
 		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });

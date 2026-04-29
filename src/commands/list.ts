@@ -5,15 +5,10 @@ import { exit } from "node:process";
 import { intro, outro, log } from "@clack/prompts";
 import pc from "picocolors";
 
-import { CATEGORIES_ORDER, CHANGE_CATEGORIES, PICCO_DIR } from "../constants.js";
-import { parsePiccoLog } from "../parser.js";
+import { CATEGORIES_ORDER, CHANGE_CATEGORIES, PICCO_DIR } from "../constants";
+import { parsePiccoLog } from "../parser";
 
-/**
- * @param {keyof typeof CHANGE_CATEGORIES} category
- * @param {Set<string>} changes
- * @returns {string}
- */
-function buildLogCategory(category, changes) {
+function buildLogCategory(category: keyof typeof CHANGE_CATEGORIES, changes: Set<string>): string {
 	if (changes.size === 0) {
 		return "";
 	}
@@ -33,7 +28,7 @@ function buildLogCategory(category, changes) {
  * @param {Record<keyof typeof CHANGE_CATEGORIES, Set<string>>} changeLog
  * @returns {string}
  */
-function buildLog(changeLog) {
+function buildLog(changeLog: Record<keyof typeof CHANGE_CATEGORIES, Set<string>>): string {
 	let finalLog = "";
 
 	for (const category of CATEGORIES_ORDER) {
@@ -46,10 +41,10 @@ function buildLog(changeLog) {
 }
 
 /**
- * @param {string} cwd Current working directory
- * @param {string[]} categories List of categories to include into the logged output
+ * @param cwd Current working directory
+ * @param categories List of categories to include into the logged output
  */
-export async function list(cwd, categories) {
+export async function list(cwd: string, categories: string[]) {
 	const piccoPath = resolve(cwd, PICCO_DIR);
 	const piccologs = (await readdir(piccoPath)).filter((fileName) => fileName.endsWith(".md"));
 
@@ -66,8 +61,8 @@ export async function list(cwd, categories) {
 	const categoriesToLog = filteredCategories.length > 0 ? filteredCategories : allCategories;
 
 	if (unknownCategories.length > 0) {
-		/** @type {(categories: string[]) => string} */
-		const stringifyCategories = (categories) => categories.map((cat) => `"${cat}"`).join(", ");
+		const stringifyCategories = (categories: string[]) =>
+			categories.map((cat) => `"${cat}"`).join(", ");
 		const types = unknownCategories.length > 1 ? "types" : "type";
 
 		log.warn(
@@ -77,8 +72,9 @@ export async function list(cwd, categories) {
 		);
 	}
 
-	/** @type {Record<keyof typeof CHANGE_CATEGORIES, Set<string>>} */
-	const changeLog = Object.fromEntries(categoriesToLog.map((category) => [category, new Set()]));
+	const changeLog: Record<keyof typeof CHANGE_CATEGORIES, Set<string>> = Object.fromEntries(
+		categoriesToLog.map((category) => [category, new Set()]),
+	) as Record<keyof typeof CHANGE_CATEGORIES, Set<string>>;
 
 	for (const logName of piccologs) {
 		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });

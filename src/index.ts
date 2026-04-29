@@ -1,9 +1,9 @@
 import { argv, cwd, exit } from "node:process";
 
-import { add } from "./commands/add.js";
-import { init } from "./commands/init.js";
-import { list } from "./commands/list.js";
-import { version } from "./commands/version.js";
+import { add } from "./commands/add";
+import { init } from "./commands/init";
+import { list } from "./commands/list";
+import { version } from "./commands/version";
 
 async function run() {
 	const rootDir = cwd();
