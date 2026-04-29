@@ -1,59 +1,91 @@
 import pc from "picocolors";
 
+import type { Prettify } from "./utility";
+
 export const PICCO_DIR = ".piccologs";
 
-export const CHANGE_CATEGORIES = {
-	feature: "Features",
-	bugfix: "Bug Fixes",
-	ui: "UI Changes",
-	api: "API Changes",
-	refactor: "Refactoring",
-	performance: "Performance Improvements",
-	dependencies: "Dependencies",
-	removal: "Removals",
-	migration: "Migration Steps",
-	documentation: "Documentation",
-	other: "Other",
+type ChangeCategoryDefinition = {
+	key: string;
+	name: string;
+	icon: string;
+	placeholder: string;
 };
 
-export const CATEGORIES_ICONS = {
-	feature: "✨",
-	bugfix: "🐛",
-	ui: "🖼️",
-	api: "🔌",
-	refactor: "♻️",
-	performance: "⚡️",
-	dependencies: "📦️",
-	removal: "🔥",
-	migration: "🏗",
-	documentation: "📝",
-	other: "💡",
-};
+type ChangeCategories<T extends ChangeCategoryDefinition[]> = ReadonlyArray<
+	Prettify<{ readonly key: T[number]["key"] } & Readonly<Omit<ChangeCategoryDefinition, "key">>>
+> & {};
 
-export const CATEGORIES_PLACEHOLDERS = {
-	feature: "Implement a breathtaking, world-changing feature (#42)",
-	bugfix: "Fix the most complicated bug so far (#69)",
-	ui: "Cast some CSS magic spells (#314)",
-	api: "Change route to return status code 418 (#9001)",
-	refactor: "Refactor code from 5 years ago (#420)",
-	performance: `Improve code to be ${pc.italic("blazingly fast")} (#42069)`,
-	dependencies: "Update Jest from v13.0.7 -> v69.4.20 (#69420)",
-	removal: "Remove unused code from existence (#1337)",
-	migration: "Run `rm -rf /`",
-	documentation: "Add comment to remind my future-self what this code does (#7353)",
-	other: "¯\\_(ツ)_/¯",
-};
+const defineChangeCategories = <const T extends ChangeCategoryDefinition[]>(
+	categories: T,
+): ChangeCategories<T> => categories as ChangeCategories<T>;
 
-export const CATEGORIES_ORDER: Array<keyof typeof CHANGE_CATEGORIES> = [
-	"feature",
-	"bugfix",
-	"ui",
-	"api",
-	"performance",
-	"removal",
-	"refactor",
-	"dependencies",
-	"documentation",
-	"other",
-	"migration",
-];
+export const CHANGE_CATEGORIES = defineChangeCategories([
+	{
+		key: "feature",
+		name: "Features",
+		icon: "✨",
+		placeholder: "Implement a breathtaking, world-changing feature (#42)",
+	},
+	{
+		key: "bugfix",
+		name: "Bug Fixes",
+		icon: "🐛",
+		placeholder: "Fix the most complicated bug so far (#69)",
+	},
+	{
+		key: "ui",
+		name: "UI Changes",
+		icon: "🖼️",
+		placeholder: "Cast some CSS magic spells (#314)",
+	},
+	{
+		key: "api",
+		name: "API Changes",
+		icon: "🔌",
+		placeholder: "Change route to return status code 418 (#9001)",
+	},
+	{
+		key: "performance",
+		name: "Performance Improvements",
+		icon: "⚡️",
+		placeholder: `Improve code to be ${pc.italic("blazingly fast")} (#42069)`,
+	},
+	{
+		key: "removal",
+		name: "Removals",
+		icon: "🔥",
+		placeholder: "Remove unused code from existence (#1337)",
+	},
+	{
+		key: "refactor",
+		name: "Refactoring",
+		icon: "♻️",
+		placeholder: "Refactor code from 5 years ago (#420)",
+	},
+	{
+		key: "dependencies",
+		name: "Dependencies",
+		icon: "📦️",
+		placeholder: "Update Jest from v13.0.7 -> v69.4.20 (#69420)",
+	},
+	{
+		key: "documentation",
+		name: "Documentation",
+		icon: "📝",
+		placeholder: "Add comment to remind my future-self what this code does (#7353)",
+	},
+	{
+		key: "other",
+		name: "Other",
+		icon: "💡",
+		placeholder: "¯\\_(ツ)_/¯",
+	},
+	{
+		key: "migration",
+		name: "Migration Steps",
+		icon: "🏗",
+		placeholder: "Run `rm -rf /`",
+	},
+]);
+
+export type ChangeCategory = (typeof CHANGE_CATEGORIES)[number];

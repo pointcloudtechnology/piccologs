@@ -7,7 +7,7 @@ import { intro, outro, isCancel, cancel, select, text } from "@clack/prompts";
 import { humanId } from "human-id";
 import pc from "picocolors";
 
-import { CATEGORIES_PLACEHOLDERS, CHANGE_CATEGORIES, PICCO_DIR } from "../constants";
+import { CHANGE_CATEGORIES, type ChangeCategory, PICCO_DIR } from "../constants";
 
 function onCancel() {
 	cancel("Have a nice day!");
@@ -18,7 +18,7 @@ function generateLogId() {
 	return humanId({ separator: "-", capitalize: false, addAdverb: true });
 }
 
-function generateLogContent(category: keyof typeof CHANGE_CATEGORIES, summary: string) {
+function generateLogContent(category: ChangeCategory["key"], summary: string) {
 	return `---
 category: ${category}
 ---
@@ -34,12 +34,9 @@ export async function add(cwd: string) {
 
 	intro(pc.bgCyan(pc.black(` picco add `)));
 
-	const category = await select<keyof typeof CHANGE_CATEGORIES>({
+	const category = await select<ChangeCategory["key"]>({
 		message: `What ${pc.green(pc.bold("type"))} is your change?`,
-		options: Object.entries(CHANGE_CATEGORIES).map(([id, label]) => ({ value: id, label })) as {
-			value: keyof typeof CHANGE_CATEGORIES;
-			label: string;
-		}[],
+		options: CHANGE_CATEGORIES.map(({ key, name }) => ({ value: key, label: name })),
 	});
 
 	if (isCancel(category)) {
@@ -48,7 +45,7 @@ export async function add(cwd: string) {
 
 	const summary = await text({
 		message: `Please enter a ${pc.green(pc.bold("summary"))} of your change (use | as line separators)`,
-		placeholder: CATEGORIES_PLACEHOLDERS[category],
+		placeholder: CHANGE_CATEGORIES.find(({ key }) => key === category)!.placeholder,
 		validate(value) {
 			if (!value?.length) {
 				return `Please enter a ${pc.red(pc.bold("summary"))}!`;
@@ -57,6 +54,8 @@ export async function add(cwd: string) {
 			if (!["migration", "other"].includes(category) && !/\(#[0-9]+\)/.test(value)) {
 				return `Please provide a PR number! (#42)`;
 			}
+
+			return;
 		},
 	});
 

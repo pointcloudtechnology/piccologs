@@ -1,9 +1,9 @@
-import type { CHANGE_CATEGORIES } from "./constants";
+import type { ChangeCategory } from "./constants";
 
 const LOG_PARSE_REGEX = /\s*---([^]*?)\n\s*---(\s*(?:\n|$)[^]*)/;
 
 export function parsePiccoLog(logContents: string): {
-	category: keyof typeof CHANGE_CATEGORIES;
+	category: ChangeCategory["key"];
 	summary: string[];
 } {
 	const parseResult = LOG_PARSE_REGEX.exec(logContents);

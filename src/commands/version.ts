@@ -5,7 +5,7 @@ import { exit } from "node:process";
 import { intro, outro, isCancel, cancel, multiselect, text, spinner } from "@clack/prompts";
 import pc from "picocolors";
 
-import { CATEGORIES_ICONS, CATEGORIES_ORDER, CHANGE_CATEGORIES, PICCO_DIR } from "../constants";
+import { CHANGE_CATEGORIES, type ChangeCategory, PICCO_DIR } from "../constants";
 import { parsePiccoLog } from "../parser";
 
 function onCancel() {
@@ -22,15 +22,14 @@ function getDateVersion(): string {
 	return `${year}-${month}-${day}`;
 }
 
-function buildReleaseCategory(
-	category: keyof typeof CHANGE_CATEGORIES,
-	changes: Set<string>,
-): string {
+function buildReleaseCategory(category: ChangeCategory["key"], changes: Set<string>): string {
 	if (changes.size === 0) {
 		return "";
 	}
 
-	let categoryLog = `### ${CATEGORIES_ICONS[category]} ${CHANGE_CATEGORIES[category]}\n\n`;
+	const { icon, name } = CHANGE_CATEGORIES.find(({ key }) => key === category)!;
+
+	let categoryLog = `### ${icon} ${name}\n\n`;
 
 	for (const change of changes) {
 		categoryLog += `* ${change}\n`;
@@ -43,12 +42,12 @@ function buildReleaseCategory(
 
 function buildReleaseLog(
 	versionTag: string,
-	releaseLog: Record<keyof typeof CHANGE_CATEGORIES, Set<string>>,
+	releaseLog: Record<ChangeCategory["key"], Set<string>>,
 ): string {
 	let finalReleaseLog = `## [${versionTag}]\n\n`;
 
-	for (const category of CATEGORIES_ORDER) {
-		finalReleaseLog += buildReleaseCategory(category, releaseLog[category]);
+	for (const { key } of CHANGE_CATEGORIES) {
+		finalReleaseLog += buildReleaseCategory(key, releaseLog[key]);
 	}
 
 	return finalReleaseLog;
@@ -108,9 +107,9 @@ export async function version(cwd: string) {
 		return onCancel();
 	}
 
-	const releaseLog: Record<keyof typeof CHANGE_CATEGORIES, Set<string>> = Object.fromEntries(
-		Object.keys(CHANGE_CATEGORIES).map((category) => [category, new Set()]),
-	) as Record<keyof typeof CHANGE_CATEGORIES, Set<string>>;
+	const releaseLog: Record<ChangeCategory["key"], Set<string>> = Object.fromEntries(
+		CHANGE_CATEGORIES.map(({ key }) => [key, new Set()]),
+	) as Record<ChangeCategory["key"], Set<string>>;
 
 	for (const logName of piccologs) {
 		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });

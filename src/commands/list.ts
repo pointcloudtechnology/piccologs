@@ -5,15 +5,17 @@ import { exit } from "node:process";
 import { intro, outro, log } from "@clack/prompts";
 import pc from "picocolors";
 
-import { CATEGORIES_ORDER, CHANGE_CATEGORIES, PICCO_DIR } from "../constants";
+import { CHANGE_CATEGORIES, type ChangeCategory, PICCO_DIR } from "../constants";
 import { parsePiccoLog } from "../parser";
 
-function buildLogCategory(category: keyof typeof CHANGE_CATEGORIES, changes: Set<string>): string {
+function buildLogCategory(category: ChangeCategory["key"], changes: Set<string>): string {
 	if (changes.size === 0) {
 		return "";
 	}
 
-	let categoryLog = pc.bold(pc.cyan(`${CHANGE_CATEGORIES[category]}\n`));
+	let categoryLog = pc.bold(
+		pc.cyan(`${CHANGE_CATEGORIES.find(({ key }) => key === category)!.name}\n`),
+	);
 
 	for (const change of changes) {
 		categoryLog += `• ${change}\n`;
@@ -24,16 +26,12 @@ function buildLogCategory(category: keyof typeof CHANGE_CATEGORIES, changes: Set
 	return categoryLog;
 }
 
-/**
- * @param {Record<keyof typeof CHANGE_CATEGORIES, Set<string>>} changeLog
- * @returns {string}
- */
-function buildLog(changeLog: Record<keyof typeof CHANGE_CATEGORIES, Set<string>>): string {
+function buildLog(changeLog: Record<ChangeCategory["key"], Set<string>>): string {
 	let finalLog = "";
 
-	for (const category of CATEGORIES_ORDER) {
-		if (category in changeLog) {
-			finalLog += buildLogCategory(category, changeLog[category]);
+	for (const { key } of CHANGE_CATEGORIES) {
+		if (key in changeLog) {
+			finalLog += buildLogCategory(key, changeLog[key]);
 		}
 	}
 
@@ -55,9 +53,13 @@ export async function list(cwd: string, categories: string[]) {
 
 	intro(pc.bgCyan(pc.black(` picco list `)));
 
-	const allCategories = Object.keys(CHANGE_CATEGORIES);
-	const unknownCategories = categories.filter((category) => !allCategories.includes(category));
-	const filteredCategories = categories.filter((category) => allCategories.includes(category));
+	const allCategories = CHANGE_CATEGORIES.map(({ key }) => key);
+	const unknownCategories = categories.filter(
+		(category) => !(allCategories as string[]).includes(category),
+	);
+	const filteredCategories = categories.filter((category) =>
+		allCategories.includes(category as ChangeCategory["key"]),
+	) as ChangeCategory["key"][];
 	const categoriesToLog = filteredCategories.length > 0 ? filteredCategories : allCategories;
 
 	if (unknownCategories.length > 0) {
@@ -72,9 +74,9 @@ export async function list(cwd: string, categories: string[]) {
 		);
 	}
 
-	const changeLog: Record<keyof typeof CHANGE_CATEGORIES, Set<string>> = Object.fromEntries(
+	const changeLog: Record<ChangeCategory["key"], Set<string>> = Object.fromEntries(
 		categoriesToLog.map((category) => [category, new Set()]),
-	) as Record<keyof typeof CHANGE_CATEGORIES, Set<string>>;
+	) as Record<ChangeCategory["key"], Set<string>>;
 
 	for (const logName of piccologs) {
 		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });
