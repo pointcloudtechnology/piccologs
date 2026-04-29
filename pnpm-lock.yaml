@@ -5,10 +5,27 @@ settings:
   excludeLinksFromLockfile: false
 
 catalogs:
+  cli:
+    '@clack/prompts':
+      specifier: 1.2.0
+      version: 1.2.0
+    human-id:
+      specifier: 4.1.3
+      version: 4.1.3
+    picocolors:
+      specifier: 1.1.1
+      version: 1.1.1
   default:
     vite-plus:
       specifier: latest
       version: 0.1.19
+  dev:
+    '@types/node':
+      specifier: 25.6.0
+      version: 25.6.0
+    typescript:
+      specifier: 6.0.3
+      version: 6.0.3
 
 overrides:
   vite: npm:@voidzero-dev/vite-plus-core@latest
@@ -19,19 +36,19 @@ importers:
   .:
     devDependencies:
       '@clack/prompts':
-        specifier: 1.2.0
+        specifier: catalog:cli
         version: 1.2.0
       '@types/node':
-        specifier: 25.6.0
+        specifier: catalog:dev
         version: 25.6.0
       human-id:
-        specifier: 4.1.3
+        specifier: catalog:cli
         version: 4.1.3
       picocolors:
-        specifier: 1.1.1
+        specifier: catalog:cli
         version: 1.1.1
       typescript:
-        specifier: 6.0.3
+        specifier: catalog:dev
         version: 6.0.3
       vite-plus:
         specifier: 'catalog:'
