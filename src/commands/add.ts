@@ -3,7 +3,7 @@ import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { exit } from "node:process";
 
-import { intro, outro, isCancel, cancel, select, text } from "@clack/prompts";
+import { intro, outro, isCancel, cancel, text, autocomplete } from "@clack/prompts";
 import { humanId } from "human-id";
 import pc from "picocolors";
 
@@ -39,7 +39,7 @@ export async function add(cwd: string) {
 
 	intro(pc.bgCyan(pc.black(` picco add `)));
 
-	const categoryKey = await select<ChangeCategory["key"]>({
+	const categoryKey = await autocomplete<ChangeCategory["key"]>({
 		message: `What ${pc.green(pc.bold("type"))} is your change?`,
 		options: CHANGE_CATEGORIES.map(({ key, name }) => ({ value: key, label: name })),
 	});
