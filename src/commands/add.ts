@@ -18,12 +18,17 @@ function generateLogId() {
 	return humanId({ separator: "-", capitalize: false, addAdverb: true });
 }
 
-function generateLogContent(category: ChangeCategory["key"], summary: string) {
+function generateLogContent(
+	category: ChangeCategory["key"],
+	summary: string,
+	pullRequest: number | undefined,
+) {
 	return `---
-category: ${category}
+category: ${category}${pullRequest ? `\npullRequest: ${pullRequest}` : ""}
 ---
 
-${summary}`;
+${summary}
+`;
 }
 
 /**
@@ -34,33 +39,62 @@ export async function add(cwd: string) {
 
 	intro(pc.bgCyan(pc.black(` picco add `)));
 
-	const category = await select<ChangeCategory["key"]>({
+	const categoryKey = await select<ChangeCategory["key"]>({
 		message: `What ${pc.green(pc.bold("type"))} is your change?`,
 		options: CHANGE_CATEGORIES.map(({ key, name }) => ({ value: key, label: name })),
 	});
 
-	if (isCancel(category)) {
+	if (isCancel(categoryKey)) {
 		return onCancel();
 	}
 
+	const chosenCategory = CHANGE_CATEGORIES.find(({ key }) => key === categoryKey)!;
+
 	const summary = await text({
 		message: `Please enter a ${pc.green(pc.bold("summary"))} of your change (use | as line separators)`,
-		placeholder: CHANGE_CATEGORIES.find(({ key }) => key === category)!.placeholder,
+		placeholder: chosenCategory.placeholder,
 		validate(value) {
-			if (!value?.length) {
+			if (!value) {
 				return `Please enter a ${pc.red(pc.bold("summary"))}!`;
 			}
 
-			if (!["migration", "other"].includes(category) && !/\(#[0-9]+\)/.test(value)) {
-				return `Please provide a PR number! (#42)`;
-			}
-
-			return;
+			return undefined;
 		},
 	});
 
 	if (isCancel(summary)) {
 		return onCancel();
+	}
+
+	let pullRequest: number | undefined;
+
+	if (chosenCategory.pullRequest !== "none") {
+		const num = await text({
+			message: `Please enter a ${pc.green(pc.bold("PR"))} number${chosenCategory.pullRequest === "optional" ? " (optional)" : ""}`,
+			validate(value) {
+				if (!value) {
+					if (chosenCategory.pullRequest === "required") {
+						return `Please enter a ${pc.red(pc.bold("PR"))} number!`;
+					}
+
+					return undefined;
+				}
+
+				const num = parseInt(value);
+
+				if (!Number.isInteger(num)) {
+					return `Please enter an ${pc.red(pc.bold("integer"))} number!`;
+				}
+
+				return undefined;
+			},
+		});
+
+		if (isCancel(num)) {
+			return onCancel();
+		}
+
+		pullRequest = num ? parseInt(num) : undefined;
 	}
 
 	let logId = generateLogId();
@@ -70,7 +104,7 @@ export async function add(cwd: string) {
 		logId = generateLogId();
 	}
 
-	const logContent = generateLogContent(category, summary.split("|").join("\n"));
+	const logContent = generateLogContent(categoryKey, summary.split("|").join("\n"), pullRequest);
 
 	await writeFile(resolve(piccoPath, `${logId}.md`), logContent);
 

@@ -32,7 +32,7 @@ function buildReleaseCategory(category: ChangeCategory["key"], changes: Set<stri
 	let categoryLog = `### ${icon} ${name}\n\n`;
 
 	for (const change of changes) {
-		categoryLog += `* ${change}\n`;
+		categoryLog += `- ${change}\n`;
 	}
 
 	categoryLog += "\n";
@@ -113,10 +113,10 @@ export async function version(cwd: string) {
 
 	for (const logName of piccologs) {
 		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });
-		const { category, summary } = parsePiccoLog(logContents);
+		const { category, pullRequest, summary } = parsePiccoLog(logContents);
 
 		for (const line of summary) {
-			releaseLog[category].add(line);
+			releaseLog[category].add(line + (pullRequest ? ` (#${pullRequest})` : ""));
 		}
 	}
 

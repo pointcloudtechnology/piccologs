@@ -2,10 +2,13 @@ import type { ChangeCategory } from "./constants";
 
 const LOG_PARSE_REGEX = /\s*---([^]*?)\n\s*---(\s*(?:\n|$)[^]*)/;
 
-export function parsePiccoLog(logContents: string): {
+export type ParsedPiccolog = {
 	category: ChangeCategory["key"];
+	pullRequest: number | undefined;
 	summary: string[];
-} {
+};
+
+export function parsePiccoLog(logContents: string): ParsedPiccolog {
 	const parseResult = LOG_PARSE_REGEX.exec(logContents);
 
 	if (!parseResult) {
@@ -14,15 +17,16 @@ export function parsePiccoLog(logContents: string): {
 
 	const [, rawMetadata, rawSummary] = parseResult;
 	const metadata = Object.fromEntries(
-		rawMetadata
+		rawMetadata!
 			.trim()
 			.split("\n")
 			.map((row) => row.split(": ")),
 	);
-	const summary = rawSummary.trim().split("\n");
+	const summary = rawSummary!.trim().split("\n");
 
 	return {
 		category: metadata.category,
+		pullRequest: metadata.pullRequest ? parseInt(metadata.pullRequest) : undefined,
 		summary,
 	};
 }

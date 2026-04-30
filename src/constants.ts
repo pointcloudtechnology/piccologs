@@ -9,6 +9,7 @@ type ChangeCategoryDefinition = {
 	name: string;
 	icon: string;
 	placeholder: string;
+	pullRequest: "required" | "optional" | "none";
 };
 
 type ChangeCategories<T extends ChangeCategoryDefinition[]> = ReadonlyArray<
@@ -24,67 +25,78 @@ export const CHANGE_CATEGORIES = defineChangeCategories([
 		key: "feature",
 		name: "Features",
 		icon: "✨",
-		placeholder: "Implement a breathtaking, world-changing feature (#42)",
+		placeholder: "Implement a breathtaking, world-changing feature",
+		pullRequest: "required",
 	},
 	{
 		key: "bugfix",
 		name: "Bug Fixes",
 		icon: "🐛",
-		placeholder: "Fix the most complicated bug so far (#69)",
+		placeholder: "Fix the most complicated bug so far",
+		pullRequest: "required",
 	},
 	{
 		key: "ui",
 		name: "UI Changes",
 		icon: "🖼️",
-		placeholder: "Cast some CSS magic spells (#314)",
+		placeholder: "Cast some CSS magic spells",
+		pullRequest: "required",
 	},
 	{
 		key: "api",
 		name: "API Changes",
 		icon: "🔌",
-		placeholder: "Change route to return status code 418 (#9001)",
+		placeholder: "Change route to return status code 418",
+		pullRequest: "required",
 	},
 	{
 		key: "performance",
 		name: "Performance Improvements",
 		icon: "⚡️",
-		placeholder: `Improve code to be ${pc.italic("blazingly fast")} (#42069)`,
+		placeholder: `Improve code to be ${pc.italic("blazingly fast")}`,
+		pullRequest: "required",
 	},
 	{
 		key: "removal",
 		name: "Removals",
 		icon: "🔥",
-		placeholder: "Remove unused code from existence (#1337)",
+		placeholder: "Remove unused code from existence",
+		pullRequest: "required",
 	},
 	{
 		key: "refactor",
 		name: "Refactoring",
 		icon: "♻️",
-		placeholder: "Refactor code from 5 years ago (#420)",
+		placeholder: "Refactor code from 5 years ago",
+		pullRequest: "required",
 	},
 	{
 		key: "dependencies",
 		name: "Dependencies",
 		icon: "📦️",
-		placeholder: "Update Jest from v13.0.7 -> v69.4.20 (#69420)",
+		placeholder: "Update Jest from v13.0.7 -> v69.4.20",
+		pullRequest: "required",
 	},
 	{
 		key: "documentation",
 		name: "Documentation",
 		icon: "📝",
-		placeholder: "Add comment to remind my future-self what this code does (#7353)",
+		placeholder: "Add comment to remind my future-self what this code does",
+		pullRequest: "required",
 	},
 	{
 		key: "other",
 		name: "Other",
 		icon: "💡",
 		placeholder: "¯\\_(ツ)_/¯",
+		pullRequest: "optional",
 	},
 	{
 		key: "migration",
 		name: "Migration Steps",
 		icon: "🏗",
 		placeholder: "Run `rm -rf /`",
+		pullRequest: "none",
 	},
 ]);
 

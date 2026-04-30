@@ -80,14 +80,14 @@ export async function list(cwd: string, categories: string[]) {
 
 	for (const logName of piccologs) {
 		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });
-		const { category, summary } = parsePiccoLog(logContents);
+		const { category, pullRequest, summary } = parsePiccoLog(logContents);
 
 		if (!categoriesToLog.includes(category)) {
 			continue;
 		}
 
 		for (const line of summary) {
-			changeLog[category].add(line);
+			changeLog[category].add(line + (pullRequest ? ` (#${pullRequest})` : ""));
 		}
 	}
 
