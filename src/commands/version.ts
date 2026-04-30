@@ -2,7 +2,7 @@ import { readdir, readFile, open, copyFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 import { exit } from "node:process";
 
-import { intro, outro, isCancel, cancel, multiselect, text, spinner } from "@clack/prompts";
+import { intro, outro, isCancel, cancel, multiselect, text, spinner, log } from "@clack/prompts";
 import pc from "picocolors";
 
 import { CHANGE_CATEGORIES, type ChangeCategory, PICCO_DIR } from "../constants";
@@ -113,10 +113,26 @@ export async function version(cwd: string) {
 
 	for (const logName of piccologs) {
 		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });
-		const { category, pullRequest, summary } = parsePiccoLog(logContents);
 
-		for (const line of summary) {
-			releaseLog[category].add(line + (pullRequest ? ` (#${pullRequest})` : ""));
+		try {
+			const { category, pullRequest, summary } = parsePiccoLog(logContents);
+
+			for (const line of summary) {
+				releaseLog[category].add(line + (pullRequest ? ` (#${pullRequest})` : ""));
+			}
+		} catch (error) {
+			let errorMessage: string = pc.red(pc.bold((error as Error).message)) + "\n";
+
+			errorMessage += ` ╭─[${pc.cyan(pc.bold(logName))}]\n`;
+
+			for (const line of logContents.split("\n")) {
+				errorMessage += ` │ ${line}\n`;
+			}
+
+			errorMessage += ` ╰────`;
+
+			log.error(errorMessage);
+			return;
 		}
 	}
 

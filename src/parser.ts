@@ -1,32 +1,36 @@
-import type { ChangeCategory } from "./constants";
+import { extractYaml, test as hasFrontMatter } from "@std/front-matter";
+import { type } from "arktype";
 
-const LOG_PARSE_REGEX = /\s*---([^]*?)\n\s*---(\s*(?:\n|$)[^]*)/;
+import { CHANGE_CATEGORIES } from "./constants";
+import type { Prettify } from "./utility";
 
-export type ParsedPiccolog = {
-	category: ChangeCategory["key"];
-	pullRequest: number | undefined;
-	summary: string[];
-};
+const Metadata = type({
+	category: type.enumerated(...CHANGE_CATEGORIES.map(({ key }) => key)),
+	pullRequest: "number.integer?",
+});
+
+export type ParsedPiccolog = Prettify<
+	typeof Metadata.infer & {
+		summary: string[];
+	}
+>;
 
 export function parsePiccoLog(logContents: string): ParsedPiccolog {
-	const parseResult = LOG_PARSE_REGEX.exec(logContents);
-
-	if (!parseResult) {
-		throw new Error(`could not parse piccolog - invalid frontmatter: ${logContents}`);
+	if (!hasFrontMatter(logContents)) {
+		throw new Error(`Failed to parse piccolog: invalid frontmatter`);
 	}
 
-	const [, rawMetadata, rawSummary] = parseResult;
-	const metadata = Object.fromEntries(
-		rawMetadata!
-			.trim()
-			.split("\n")
-			.map((row) => row.split(": ")),
-	);
-	const summary = rawSummary!.trim().split("\n");
+	const { attrs, body } = extractYaml(logContents);
+
+	const metadata = Metadata(attrs);
+	const summary = body.trim().split("\n");
+
+	if (metadata instanceof type.errors) {
+		throw new Error(`Failed to parse piccolog: ${metadata.at(0)?.message}`);
+	}
 
 	return {
-		category: metadata.category,
-		pullRequest: metadata.pullRequest ? parseInt(metadata.pullRequest) : undefined,
+		...metadata,
 		summary,
 	};
 }

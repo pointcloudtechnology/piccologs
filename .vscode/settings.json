@@ -5,5 +5,9 @@
 	"editor.formatOnSaveMode": "file",
 	"editor.codeActionsOnSave": {
 		"source.fixAll.oxc": "explicit"
-	}
+	},
+	"editor.quickSuggestions": {
+		"strings": "on"
+	},
+	"js/ts.preferences.autoImportSpecifierExcludeRegexes": ["^(node:)?os$"]
 }

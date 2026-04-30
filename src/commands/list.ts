@@ -80,14 +80,30 @@ export async function list(cwd: string, categories: string[]) {
 
 	for (const logName of piccologs) {
 		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });
-		const { category, pullRequest, summary } = parsePiccoLog(logContents);
 
-		if (!categoriesToLog.includes(category)) {
-			continue;
-		}
+		try {
+			const { category, pullRequest, summary } = parsePiccoLog(logContents);
 
-		for (const line of summary) {
-			changeLog[category].add(line + (pullRequest ? ` (#${pullRequest})` : ""));
+			if (!categoriesToLog.includes(category)) {
+				continue;
+			}
+
+			for (const line of summary) {
+				changeLog[category].add(line + (pullRequest ? ` (#${pullRequest})` : ""));
+			}
+		} catch (error) {
+			let errorMessage: string = pc.red(pc.bold((error as Error).message)) + "\n";
+
+			errorMessage += ` ╭─[${pc.cyan(pc.bold(logName))}]\n`;
+
+			for (const line of logContents.split("\n")) {
+				errorMessage += ` │ ${line}\n`;
+			}
+
+			errorMessage += ` ╰────`;
+
+			log.error(errorMessage);
+			return;
 		}
 	}
 

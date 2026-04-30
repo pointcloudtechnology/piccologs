@@ -24,7 +24,9 @@
 	},
 	"devDependencies": {
 		"@clack/prompts": "catalog:cli",
+		"@std/front-matter": "catalog:cli",
 		"@types/node": "catalog:dev",
+		"arktype": "catalog:cli",
 		"human-id": "catalog:cli",
 		"picocolors": "catalog:cli",
 		"typescript": "catalog:dev",
