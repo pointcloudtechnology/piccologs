@@ -156,27 +156,6 @@ export async function version(cwd: string) {
 		}
 	}
 
-	if (releaseLog.migration.size > 0) {
-		const rawMigrationSteps = [...releaseLog.migration.values()];
-
-		const migrationSteps = await multiselect({
-			message: `Some migration steps might be duplicate. Please deselect any steps that should be removed from final changelog.`,
-			options: rawMigrationSteps.map((step, index) => ({
-				value: index,
-				label: step.summary,
-			})),
-			initialValues: rawMigrationSteps.map((_, index) => index),
-		});
-
-		if (isCancel(migrationSteps)) {
-			return onCancel();
-		}
-
-		releaseLog.migration = new Set(
-			rawMigrationSteps.filter((_, index) => migrationSteps.includes(index)),
-		);
-	}
-
 	const spin = spinner();
 
 	spin.start("Writing to CHANGELOG.md");
