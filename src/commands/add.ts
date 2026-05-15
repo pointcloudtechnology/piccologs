@@ -23,8 +23,14 @@ function generateLogContent(
 	summary: string,
 	pullRequest: number | undefined,
 ) {
+	const frontmatterEntries = [
+		`category: ${category}`,
+		pullRequest ? `pullRequest: ${pullRequest}` : "",
+		`createdAt: ${new Date().toISOString()}`,
+	].filter((entry) => entry.length > 0);
+
 	return `---
-category: ${category}${pullRequest ? `\npullRequest: ${pullRequest}` : ""}
+${frontmatterEntries.join('\n')}
 ---
 
 ${summary}

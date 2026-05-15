@@ -1,4 +1,4 @@
-import { readdir, readFile, open, copyFile, rm } from "node:fs/promises";
+import { readdir, readFile, open, copyFile, rm, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { exit } from "node:process";
 
@@ -22,7 +22,10 @@ function getDateVersion(): string {
 	return `${year}-${month}-${day}`;
 }
 
-function buildReleaseCategory(category: ChangeCategory["key"], changes: Set<string>): string {
+function buildReleaseCategory(
+	category: ChangeCategory["key"],
+	changes: Set<{ summary: string; timestamp: Date }>,
+): string {
 	if (changes.size === 0) {
 		return "";
 	}
@@ -31,7 +34,11 @@ function buildReleaseCategory(category: ChangeCategory["key"], changes: Set<stri
 
 	let categoryLog = `### ${icon} ${name}\n\n`;
 
-	for (const change of changes) {
+	const changesList = [...changes]
+		.sort((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf())
+		.map(({ summary }) => summary);
+
+	for (const change of changesList) {
 		categoryLog += `- ${change}\n`;
 	}
 
@@ -42,7 +49,7 @@ function buildReleaseCategory(category: ChangeCategory["key"], changes: Set<stri
 
 function buildReleaseLog(
 	versionTag: string,
-	releaseLog: Record<ChangeCategory["key"], Set<string>>,
+	releaseLog: Record<ChangeCategory["key"], Set<{ summary: string; timestamp: Date }>>,
 ): string {
 	let finalReleaseLog = `## [${versionTag}]\n\n`;
 
@@ -107,18 +114,31 @@ export async function version(cwd: string) {
 		return onCancel();
 	}
 
-	const releaseLog: Record<ChangeCategory["key"], Set<string>> = Object.fromEntries(
-		CHANGE_CATEGORIES.map(({ key }) => [key, new Set()]),
-	) as Record<ChangeCategory["key"], Set<string>>;
+	const releaseLog: Record<
+		ChangeCategory["key"],
+		Set<{ summary: string; timestamp: Date }>
+	> = Object.fromEntries(CHANGE_CATEGORIES.map(({ key }) => [key, new Set()])) as Record<
+		ChangeCategory["key"],
+		Set<{ summary: string; timestamp: Date }>
+	>;
 
 	for (const logName of piccologs) {
 		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });
 
 		try {
-			const { category, pullRequest, summary } = parsePiccoLog(logContents);
+			const { category, pullRequest, createdAt, summary } = parsePiccoLog(logContents);
+			let timestamp: Date = createdAt!;
+
+			if (!createdAt) {
+				const fileInfo = await stat(resolve(piccoPath, logName));
+				timestamp = fileInfo.birthtime;
+			}
 
 			for (const line of summary) {
-				releaseLog[category].add(line + (pullRequest ? ` (#${pullRequest})` : ""));
+				releaseLog[category].add({
+					summary: line + (pullRequest ? ` (#${pullRequest})` : ""),
+					timestamp,
+				});
 			}
 		} catch (error) {
 			let errorMessage: string = pc.red(pc.bold((error as Error).message)) + "\n";
@@ -141,7 +161,10 @@ export async function version(cwd: string) {
 
 		const migrationSteps = await multiselect({
 			message: `Some migration steps might be duplicate. Please deselect any steps that should be removed from final changelog.`,
-			options: rawMigrationSteps.map((step, index) => ({ value: index, label: step })),
+			options: rawMigrationSteps.map((step, index) => ({
+				value: index,
+				label: step.summary,
+			})),
 			initialValues: rawMigrationSteps.map((_, index) => index),
 		});
 

@@ -1,4 +1,4 @@
-import { readdir, readFile } from "node:fs/promises";
+import { readdir, readFile, stat } from "node:fs/promises";
 import { resolve } from "node:path";
 import { exit } from "node:process";
 
@@ -8,7 +8,10 @@ import pc from "picocolors";
 import { CHANGE_CATEGORIES, type ChangeCategory, PICCO_DIR } from "../constants";
 import { parsePiccoLog } from "../parser";
 
-function buildLogCategory(category: ChangeCategory["key"], changes: Set<string>): string {
+function buildLogCategory(
+	category: ChangeCategory["key"],
+	changes: Set<{ summary: string; timestamp: Date }>,
+): string {
 	if (changes.size === 0) {
 		return "";
 	}
@@ -17,7 +20,11 @@ function buildLogCategory(category: ChangeCategory["key"], changes: Set<string>)
 		pc.cyan(`${CHANGE_CATEGORIES.find(({ key }) => key === category)!.name}\n`),
 	);
 
-	for (const change of changes) {
+	const changesList = [...changes]
+		.sort((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf())
+		.map(({ summary }) => summary);
+
+	for (const change of changesList) {
 		categoryLog += `• ${change}\n`;
 	}
 
@@ -26,7 +33,9 @@ function buildLogCategory(category: ChangeCategory["key"], changes: Set<string>)
 	return categoryLog;
 }
 
-function buildLog(changeLog: Record<ChangeCategory["key"], Set<string>>): string {
+function buildLog(
+	changeLog: Record<ChangeCategory["key"], Set<{ summary: string; timestamp: Date }>>,
+): string {
 	let finalLog = "";
 
 	for (const { key } of CHANGE_CATEGORIES) {
@@ -74,22 +83,35 @@ export async function list(cwd: string, categories: string[]) {
 		);
 	}
 
-	const changeLog: Record<ChangeCategory["key"], Set<string>> = Object.fromEntries(
-		categoriesToLog.map((category) => [category, new Set()]),
-	) as Record<ChangeCategory["key"], Set<string>>;
+	const changeLog: Record<
+		ChangeCategory["key"],
+		Set<{ summary: string; timestamp: Date }>
+	> = Object.fromEntries(categoriesToLog.map((category) => [category, new Set()])) as Record<
+		ChangeCategory["key"],
+		Set<{ summary: string; timestamp: Date }>
+	>;
 
 	for (const logName of piccologs) {
 		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });
 
 		try {
-			const { category, pullRequest, summary } = parsePiccoLog(logContents);
+			const { category, pullRequest, createdAt, summary } = parsePiccoLog(logContents);
+			let timestamp: Date = createdAt!;
 
 			if (!categoriesToLog.includes(category)) {
 				continue;
 			}
 
+			if (!createdAt) {
+				const fileInfo = await stat(resolve(piccoPath, logName));
+				timestamp = fileInfo.birthtime;
+			}
+
 			for (const line of summary) {
-				changeLog[category].add(line + (pullRequest ? ` (#${pullRequest})` : ""));
+				changeLog[category].add({
+					summary: line + (pullRequest ? ` (#${pullRequest})` : ""),
+					timestamp,
+				});
 			}
 		} catch (error) {
 			let errorMessage: string = pc.red(pc.bold((error as Error).message)) + "\n";

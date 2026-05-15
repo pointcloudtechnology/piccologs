@@ -7,6 +7,7 @@ import type { Prettify } from "./utility";
 const Metadata = type({
 	category: type.enumerated(...CHANGE_CATEGORIES.map(({ key }) => key)),
 	pullRequest: "number.integer?",
+	createdAt: "Date?",
 });
 
 export type ParsedPiccolog = Prettify<
