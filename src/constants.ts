@@ -1,5 +1,3 @@
-import pc from "picocolors";
-
 import type { Prettify } from "./utility";
 
 export const PICCO_DIR = ".piccologs";
@@ -53,7 +51,7 @@ export const CHANGE_CATEGORIES = defineChangeCategories([
 		key: "performance",
 		name: "Performance Improvements",
 		icon: "⚡️",
-		placeholder: `Improve code to be ${pc.italic("blazingly fast")}`,
+		placeholder: `Improve code to be "blazingly fast"™`,
 		pullRequest: "required",
 	},
 	{

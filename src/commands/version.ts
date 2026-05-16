@@ -1,17 +1,19 @@
-import { readdir, readFile, open, copyFile, rm, stat } from "node:fs/promises";
+import { open, copyFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
-import { exit } from "node:process";
 
-import { intro, outro, isCancel, cancel, multiselect, text, spinner, log } from "@clack/prompts";
-import pc from "picocolors";
+import * as prompts from "@clack/prompts";
 
-import { CHANGE_CATEGORIES, type ChangeCategory, PICCO_DIR } from "../constants";
-import { parsePiccoLog } from "../parser";
-
-function onCancel() {
-	cancel("Have a nice day!");
-	exit(0);
-}
+import { PICCO_DIR } from "../constants";
+import {
+	buildChangelog,
+	gatherPiccologs,
+	getAllPiccologPaths,
+	highlight,
+	hyperlink,
+	intro,
+	onCancel,
+	outro,
+} from "./common";
 
 function getDateVersion(): string {
 	const now = new Date();
@@ -20,44 +22,6 @@ function getDateVersion(): string {
 	const day = now.getDate().toString().padStart(2, "0");
 
 	return `${year}-${month}-${day}`;
-}
-
-function buildReleaseCategory(
-	category: ChangeCategory["key"],
-	changes: Set<{ summary: string; timestamp: Date }>,
-): string {
-	if (changes.size === 0) {
-		return "";
-	}
-
-	const { icon, name } = CHANGE_CATEGORIES.find(({ key }) => key === category)!;
-
-	let categoryLog = `### ${icon} ${name}\n\n`;
-
-	const changesList = [...changes]
-		.sort((a, b) => a.timestamp.valueOf() - b.timestamp.valueOf())
-		.map(({ summary }) => summary);
-
-	for (const change of changesList) {
-		categoryLog += `- ${change}\n`;
-	}
-
-	categoryLog += "\n";
-
-	return categoryLog;
-}
-
-function buildReleaseLog(
-	versionTag: string,
-	releaseLog: Record<ChangeCategory["key"], Set<{ summary: string; timestamp: Date }>>,
-): string {
-	let finalReleaseLog = `## [${versionTag}]\n\n`;
-
-	for (const { key } of CHANGE_CATEGORIES) {
-		finalReleaseLog += buildReleaseCategory(key, releaseLog[key]);
-	}
-
-	return finalReleaseLog;
 }
 
 async function writeChangeLog(cwd: string, releaseLog: string) {
@@ -88,89 +52,61 @@ async function writeChangeLog(cwd: string, releaseLog: string) {
 	await rm(tempPath);
 }
 
+function promptVersion() {
+	const defaultVersion = getDateVersion();
+
+	return prompts.text({
+		message: `What should be the next version?`,
+		defaultValue: defaultVersion,
+		placeholder: defaultVersion,
+	});
+}
+
 /**
  * @param cwd Current working directory
  */
 export async function version(cwd: string) {
 	const piccoPath = resolve(cwd, PICCO_DIR);
-	const piccologs = (await readdir(piccoPath)).filter((fileName) => fileName.endsWith(".md"));
+	const piccologNames = await getAllPiccologPaths(piccoPath);
 
-	if (piccologs.length === 0) {
-		console.log("No piccologs found; skip version");
-		exit(0);
+	intro("version");
+
+	if (piccologNames.length === 0) {
+		prompts.log.warn("No piccologs found, skipping changelog generation");
+		outro();
+		return;
 	}
 
-	intro(pc.bgCyan(pc.black(` picco version `)));
+	const versionTag = await promptVersion();
 
-	const defaultVersion = getDateVersion();
-
-	const versionTag = await text({
-		message: `What should be the next version?`,
-		defaultValue: defaultVersion,
-		placeholder: defaultVersion,
-	});
-
-	if (isCancel(versionTag)) {
+	if (prompts.isCancel(versionTag)) {
 		return onCancel();
 	}
 
-	const releaseLog: Record<
-		ChangeCategory["key"],
-		Set<{ summary: string; timestamp: Date }>
-	> = Object.fromEntries(CHANGE_CATEGORIES.map(({ key }) => [key, new Set()])) as Record<
-		ChangeCategory["key"],
-		Set<{ summary: string; timestamp: Date }>
-	>;
+	const piccologs = await gatherPiccologs({ piccoPath });
 
-	for (const logName of piccologs) {
-		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });
-
-		try {
-			const { category, pullRequest, createdAt, summary } = parsePiccoLog(logContents);
-			let timestamp: Date = createdAt!;
-
-			if (!createdAt) {
-				const fileInfo = await stat(resolve(piccoPath, logName));
-				timestamp = fileInfo.birthtime;
-			}
-
-			for (const line of summary) {
-				releaseLog[category].add({
-					summary: line + (pullRequest ? ` (#${pullRequest})` : ""),
-					timestamp,
-				});
-			}
-		} catch (error) {
-			let errorMessage: string = pc.red(pc.bold((error as Error).message)) + "\n";
-
-			errorMessage += ` ╭─[${pc.cyan(pc.bold(logName))}]\n`;
-
-			for (const line of logContents.split("\n")) {
-				errorMessage += ` │ ${line}\n`;
-			}
-
-			errorMessage += ` ╰────`;
-
-			log.error(errorMessage);
-			return;
-		}
+	if (!piccologs) {
+		return;
 	}
 
-	const spin = spinner();
+	const spin = prompts.spinner();
 
 	spin.start("Writing to CHANGELOG.md");
 
-	const finalReleaseLog = buildReleaseLog(versionTag, releaseLog);
+	const changelog = buildChangelog(piccologs, {
+		formatChangelogHeading: () => `## [${versionTag}]\n\n`,
+		formatCategoryHeading: ({ icon, name }) => `### ${icon} ${name}\n\n`,
+		formatChange: ({ summary, pullRequest }) =>
+			`- ${summary + (pullRequest ? ` (#${pullRequest})` : "")}`,
+	});
 
-	await writeChangeLog(cwd, finalReleaseLog);
+	await writeChangeLog(cwd, changelog);
 
-	for (const logName of piccologs) {
+	for (const logName of piccologNames) {
 		await rm(resolve(piccoPath, logName));
 	}
 
-	spin.stop("Written to CHANGELOG.md");
+	spin.clear();
 
-	outro(
-		`Release [${pc.red(pc.bold(versionTag))}] written to ${pc.underline(pc.cyan(`CHANGELOG.md`))}!`,
-	);
+	outro(`Release [${highlight(versionTag)}] written to ${hyperlink(`CHANGELOG.md`)}!`);
 }

@@ -1,7 +1,7 @@
 {
 	"include": ["src"],
 	"compilerOptions": {
-		"target": "es2024",
+		"target": "es2025",
 		"module": "preserve",
 		"moduleResolution": "bundler",
 		"types": ["node"],

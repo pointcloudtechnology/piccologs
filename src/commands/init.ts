@@ -2,9 +2,8 @@ import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 
-import pc from "picocolors";
-
 import { PICCO_DIR } from "../constants";
+import { hyperlink } from "./common";
 
 /**
  * @param cwd Current working directory
@@ -20,5 +19,5 @@ export async function init(cwd: string) {
 
 	await writeFile(keepFilePath, "");
 
-	console.log(`${pc.green("Created directory")} ${cwd}/${pc.blue(PICCO_DIR)}`);
+	console.log(`Created directory ${hyperlink(cwd + "/" + PICCO_DIR)}`);
 }
