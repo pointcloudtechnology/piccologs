@@ -5,8 +5,8 @@ import { styleText } from "node:util";
 
 import * as prompts from "@clack/prompts";
 
-import { CHANGE_CATEGORIES, ChangeCategory } from "../constants";
-import { ParsedPiccolog, parsePiccoLog } from "../parser";
+import { CHANGE_CATEGORIES, type ChangeCategory } from "../constants";
+import { parsePiccoLog, type Piccolog } from "../parser";
 
 export function intro(command: string): void {
 	prompts.intro(styleText(["bgBlue", "black", "bold"], ` picco ${command} `));
@@ -27,6 +27,10 @@ export function onCancel(): void {
 
 export function highlight(text: string): string {
 	return styleText(["blue", "bold"], text);
+}
+
+export function darken(text: string): string {
+	return styleText(["gray"], text);
 }
 
 export function hyperlink(text: string): string {
@@ -60,10 +64,10 @@ export async function getAllPiccologPaths(piccoPath: string): Promise<string[]> 
 export async function gatherPiccologs(options: {
 	piccoPath: string;
 	categories?: ChangeCategory["key"][];
-}): Promise<Partial<Record<ChangeCategory["key"], ParsedPiccolog[]>> | undefined> {
+}): Promise<Partial<Record<ChangeCategory["key"], Piccolog[]>> | undefined> {
 	const { piccoPath, categories = CHANGE_CATEGORIES.map(({ key }) => key) } = options;
 	const piccologNames = await getAllPiccologPaths(piccoPath);
-	const piccologs = [];
+	const piccologs: Piccolog[] = [];
 
 	for (const logName of piccologNames) {
 		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });
@@ -80,7 +84,7 @@ export async function gatherPiccologs(options: {
 				piccolog.createdAt = fileInfo.birthtime;
 			}
 
-			piccologs.push(piccolog);
+			piccologs.push({ ...piccolog, name: logName, createdAt: piccolog.createdAt });
 		} catch (error) {
 			logError((error as Error).message, { fileName: logName, content: logContents });
 
@@ -92,11 +96,11 @@ export async function gatherPiccologs(options: {
 }
 
 export function buildChangelog(
-	piccologs: Partial<Record<ChangeCategory["key"], ParsedPiccolog[]>>,
+	piccologs: Partial<Record<ChangeCategory["key"], Piccolog[]>>,
 	formatters: {
 		formatChangelogHeading: () => string;
 		formatCategoryHeading: (category: ChangeCategory) => string;
-		formatChange: (piccolog: ParsedPiccolog) => string;
+		formatChange: (piccolog: Piccolog) => string;
 	},
 ): string {
 	let changelog = formatters.formatChangelogHeading();
@@ -109,7 +113,7 @@ export function buildChangelog(
 		changelog += formatters.formatCategoryHeading(category);
 
 		changelog += piccologs[category.key]
-			.toSorted((a, b) => a.createdAt!.valueOf() - b.createdAt!.valueOf())
+			.toSorted((a, b) => a.createdAt.valueOf() - b.createdAt.valueOf())
 			.map((piccolog) => formatters.formatChange(piccolog))
 			.join("\n");
 

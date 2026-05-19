@@ -6,6 +6,7 @@ import * as prompts from "@clack/prompts";
 import { humanId } from "human-id";
 
 import { CHANGE_CATEGORIES, type ChangeCategory, PICCO_DIR } from "../constants";
+import { Lockfile } from "../lockfile";
 import { highlight, hyperlink, intro, onCancel, outro } from "./common";
 
 function generateLogId() {
@@ -80,6 +81,7 @@ function promptPullRequest(category: ChangeCategory) {
  */
 export async function add(cwd: string) {
 	const piccoPath = resolve(cwd, PICCO_DIR);
+	await using lockfile = await Lockfile.readFromFile(piccoPath);
 
 	intro("add");
 
@@ -116,9 +118,16 @@ export async function add(cwd: string) {
 		logId = generateLogId();
 	}
 
+	const logFileName = `${logId}.md`;
 	const logContent = generateLogContent(categoryKey, summary.split("|").join("\n"), pullRequest);
 
-	await writeFile(resolve(piccoPath, `${logId}.md`), logContent);
+	await writeFile(resolve(piccoPath, logFileName), logContent);
 
-	outro(`Piccolog ${hyperlink(`${PICCO_DIR}/${logId}.md`)} added!`);
+	outro(`Piccolog ${hyperlink(`${PICCO_DIR}/${logFileName}`)} added!`);
+
+	lockfile.addToKnownLogs([logFileName]);
+
+	if (categoryKey === "migration") {
+		lockfile.addToAppliedMigrations([logFileName]);
+	}
 }

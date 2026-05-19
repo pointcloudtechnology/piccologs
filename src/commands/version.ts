@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import * as prompts from "@clack/prompts";
 
 import { PICCO_DIR } from "../constants";
+import { Lockfile } from "../lockfile";
 import {
 	buildChangelog,
 	gatherPiccologs,
@@ -68,6 +69,7 @@ function promptVersion() {
 export async function version(cwd: string) {
 	const piccoPath = resolve(cwd, PICCO_DIR);
 	const piccologNames = await getAllPiccologPaths(piccoPath);
+	await using lockfile = await Lockfile.readFromFile(piccoPath);
 
 	intro("version");
 
@@ -109,4 +111,6 @@ export async function version(cwd: string) {
 	spin.clear();
 
 	outro(`Release [${highlight(versionTag)}] written to ${hyperlink(`CHANGELOG.md`)}!`);
+
+	lockfile.clearAllLogs();
 }

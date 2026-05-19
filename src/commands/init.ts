@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { resolve } from "node:path";
 
 import { PICCO_DIR } from "../constants";
 import { hyperlink } from "./common";
@@ -9,15 +9,18 @@ import { hyperlink } from "./common";
  * @param cwd Current working directory
  */
 export async function init(cwd: string) {
-	const keepFilePath = resolve(cwd, PICCO_DIR, ".gitkeep");
+	const piccoPath = resolve(cwd, PICCO_DIR);
+	const gitIgnoreFilePath = resolve(piccoPath, ".gitignore");
 
-	if (existsSync(keepFilePath)) {
-		return;
+	if (!existsSync(piccoPath)) {
+		await mkdir(piccoPath);
 	}
 
-	await mkdir(dirname(keepFilePath));
+	if (!existsSync(gitIgnoreFilePath)) {
+		await writeFile(gitIgnoreFilePath, ".piccolock.json");
 
-	await writeFile(keepFilePath, "");
-
-	console.log(`Created directory ${hyperlink(cwd + "/" + PICCO_DIR)}`);
+		console.log(`Created directory ${hyperlink(cwd + "/" + PICCO_DIR)}`);
+	} else {
+		console.log(`Piccologs directory already exists in ${hyperlink(cwd + "/" + PICCO_DIR)}`);
+	}
 }

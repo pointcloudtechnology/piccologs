@@ -10,9 +10,16 @@ const Metadata = type({
 	createdAt: "Date?",
 });
 
-export type ParsedPiccolog = Prettify<
+type ParsedPiccolog = Prettify<
 	typeof Metadata.infer & {
 		summary: string[];
+	}
+>;
+
+export type Piccolog = Prettify<
+	Omit<ParsedPiccolog, "createdAt"> & {
+		createdAt: Date;
+		name: string;
 	}
 >;
 

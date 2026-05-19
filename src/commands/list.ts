@@ -4,7 +4,8 @@ import { styleText } from "node:util";
 import * as prompts from "@clack/prompts";
 
 import { CHANGE_CATEGORIES, type ChangeCategory, PICCO_DIR } from "../constants";
-import { buildChangelog, gatherPiccologs, highlight, intro, outro } from "./common";
+import { Lockfile } from "../lockfile";
+import { buildChangelog, darken, gatherPiccologs, highlight, intro, outro } from "./common";
 
 function getCategoriesToLog(requestedCategories: Set<string>): ChangeCategory["key"][] {
 	const allCategories = new Set(CHANGE_CATEGORIES.map(({ key }) => key));
@@ -34,6 +35,7 @@ function getCategoriesToLog(requestedCategories: Set<string>): ChangeCategory["k
  */
 export async function list(cwd: string, categories: string[]) {
 	const piccoPath = resolve(cwd, PICCO_DIR);
+	await using lockfile = await Lockfile.readFromFile(piccoPath);
 
 	intro("list");
 
@@ -51,11 +53,31 @@ export async function list(cwd: string, categories: string[]) {
 	const changelog = buildChangelog(piccologs, {
 		formatChangelogHeading: () => "",
 		formatCategoryHeading: ({ name }) => highlight(`${name}\n`),
-		formatChange: ({ summary, pullRequest }) =>
-			`• ${summary + (pullRequest ? ` (#${pullRequest})` : "")}`,
+		formatChange: ({ name, category, summary, pullRequest }) => {
+			let prefix = "";
+			let text = `${summary + (pullRequest ? ` (#${pullRequest})` : "")}`;
+
+			if (!lockfile.knownLogs.includes(name)) {
+				prefix = styleText(["cyan", "bold"], "NEW");
+			} else if (category === "migration" && !lockfile.appliedMigrations.includes(name)) {
+				prefix = styleText(["yellow", "bold"], "APPLY");
+			}
+
+			if (prefix.length === 0) {
+				return darken(`• ${text}`);
+			}
+
+			return `• ${prefix} ${text}`;
+		},
 	});
 
 	prompts.log.info(changelog.trim() || "Nothing to show!");
 
 	outro();
+
+	lockfile.addToKnownLogs(
+		Object.values(piccologs)
+			.flat()
+			.map(({ name }) => name),
+	);
 }
