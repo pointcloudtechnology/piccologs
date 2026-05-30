@@ -1,6 +1,7 @@
 import { argv, cwd, exit } from "node:process";
 
 import { add } from "./commands/add";
+import { apply } from "./commands/apply";
 import { init } from "./commands/init";
 import { list } from "./commands/list";
 import { version } from "./commands/version";
@@ -32,8 +33,12 @@ async function run() {
 			await list(rootDir, args);
 			break;
 
+		case "apply":
+			await apply(rootDir);
+			break;
+
 		default:
-			console.log("usage: picco <init|add|version|list>");
+			console.log("usage: picco <init|add|version|list|apply>");
 			exit(1);
 	}
 }

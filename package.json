@@ -28,6 +28,7 @@
 		"@types/node": "catalog:dev",
 		"arktype": "catalog:cli",
 		"human-id": "catalog:cli",
+		"tinyexec": "catalog:cli",
 		"typescript": "catalog:dev",
 		"vite-plus": "catalog:"
 	},

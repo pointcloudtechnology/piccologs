@@ -122,3 +122,7 @@ export function buildChangelog(
 
 	return changelog;
 }
+
+export function formatPiccologSummary(piccolog: Piccolog): string {
+	return piccolog.summary.join(" ");
+}
