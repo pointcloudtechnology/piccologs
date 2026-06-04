@@ -8,6 +8,7 @@ type ChangeCategoryDefinition = {
 	icon: string;
 	placeholder: string;
 	pullRequest: "required" | "optional" | "none";
+	presets?: string[];
 };
 
 type ChangeCategories<T extends ChangeCategoryDefinition[]> = ReadonlyArray<
@@ -95,6 +96,7 @@ export const CHANGE_CATEGORIES = defineChangeCategories([
 		icon: "🏗",
 		placeholder: "Run `rm -rf /`",
 		pullRequest: "none",
+		presets: ["Run `composer install`.", "Run `php artisan migrate`.", "Run `pnpm install`."],
 	},
 ]);
 

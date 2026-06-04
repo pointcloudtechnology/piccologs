@@ -9,6 +9,8 @@ import { CHANGE_CATEGORIES, type ChangeCategory, PICCO_DIR } from "../constants"
 import { Lockfile } from "../lockfile";
 import { highlight, hyperlink, intro, onCancel, outro } from "./common";
 
+const SUMMARY_PRESET_OTHER = "other";
+
 function generateLogId() {
 	return humanId({ separator: "-", capitalize: false, addAdverb: true });
 }
@@ -36,6 +38,16 @@ function promptCategory() {
 	return prompts.autocomplete<ChangeCategory["key"]>({
 		message: `What ${highlight("category")} is your change?`,
 		options: CHANGE_CATEGORIES.map(({ key, name }) => ({ value: key, label: name })),
+	});
+}
+
+function promptSummaryPreset(category: ChangeCategory & { presets: string[] }) {
+	return prompts.select({
+		message: `Please choose a ${highlight("summary")} of your change`,
+		options: [
+			...category.presets.map((preset) => ({ value: preset, label: preset })),
+			{ value: SUMMARY_PRESET_OTHER, label: "Other" },
+		],
 	});
 }
 
@@ -76,6 +88,10 @@ function promptPullRequest(category: ChangeCategory) {
 	});
 }
 
+function hasPresets(category: ChangeCategory): category is ChangeCategory & { presets: string[] } {
+	return category.presets !== undefined;
+}
+
 /**
  * @param cwd Current working directory
  */
@@ -92,8 +108,15 @@ export async function add(cwd: string) {
 	}
 
 	const chosenCategory = CHANGE_CATEGORIES.find(({ key }) => key === categoryKey)!;
+	let summary: string | symbol | undefined;
 
-	const summary = await promptSummary(chosenCategory);
+	if (hasPresets(chosenCategory)) {
+		summary = await promptSummaryPreset(chosenCategory);
+	}
+
+	if (summary === SUMMARY_PRESET_OTHER || summary === undefined) {
+		summary = await promptSummary(chosenCategory);
+	}
 
 	if (prompts.isCancel(summary)) {
 		return onCancel();
