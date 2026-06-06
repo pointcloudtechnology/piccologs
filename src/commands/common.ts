@@ -95,12 +95,47 @@ export async function gatherPiccologs(options: {
 	return Object.groupBy(piccologs, ({ category }) => category);
 }
 
+export type DeduplicatedPiccolog = Piccolog & { duplicates: Piccolog[] };
+
+export function deduplicatePiccologsByPresets(
+	piccologs: Piccolog[],
+	category: ChangeCategory,
+): DeduplicatedPiccolog[] {
+	const sourcePiccologs = piccologs.toSorted(
+		(a, b) => a.createdAt.valueOf() - b.createdAt.valueOf(),
+	);
+	const outputPiccologs: DeduplicatedPiccolog[] = [];
+
+	for (const preset of category.presets ?? []) {
+		const piccologsForPreset = sourcePiccologs.filter(
+			({ summary }) => summary.join("\n") === preset,
+		);
+
+		if (piccologsForPreset.length > 0) {
+			outputPiccologs.push({
+				...piccologsForPreset.at(-1)!,
+				duplicates: piccologsForPreset.slice(0, -1),
+			});
+		}
+	}
+
+	outputPiccologs.push(
+		...sourcePiccologs
+			.filter(({ summary }) =>
+				(category.presets ?? []).every((preset) => summary.join("\n") !== preset),
+			)
+			.map((piccolog) => ({ ...piccolog, duplicates: [] })),
+	);
+
+	return outputPiccologs;
+}
+
 export function buildChangelog(
 	piccologs: Partial<Record<ChangeCategory["key"], Piccolog[]>>,
 	formatters: {
 		formatChangelogHeading: () => string;
 		formatCategoryHeading: (category: ChangeCategory) => string;
-		formatChange: (piccolog: Piccolog) => string;
+		formatChange: (piccolog: DeduplicatedPiccolog) => string;
 	},
 ): string {
 	let changelog = formatters.formatChangelogHeading();
@@ -112,8 +147,7 @@ export function buildChangelog(
 
 		changelog += formatters.formatCategoryHeading(category);
 
-		changelog += piccologs[category.key]
-			.toSorted((a, b) => a.createdAt.valueOf() - b.createdAt.valueOf())
+		changelog += deduplicatePiccologsByPresets(piccologs[category.key]!, category)
 			.map((piccolog) => formatters.formatChange(piccolog))
 			.join("\n");
 

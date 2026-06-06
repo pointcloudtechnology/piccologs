@@ -53,13 +53,17 @@ export async function list(cwd: string, categories: string[]) {
 	const changelog = buildChangelog(piccologs, {
 		formatChangelogHeading: () => "",
 		formatCategoryHeading: ({ name }) => highlight(`${name}\n`),
-		formatChange: ({ name, category, summary, pullRequest }) => {
+		formatChange: ({ name, category, summary, pullRequest, duplicates }) => {
+			const allNames = [name, ...duplicates.map(({ name }) => name)];
 			let prefix = "";
 			let text = `${summary + (pullRequest ? ` (#${pullRequest})` : "")}`;
 
-			if (!lockfile.knownLogs.includes(name)) {
+			if (!allNames.every((name) => lockfile.knownLogs.includes(name))) {
 				prefix = styleText(["cyan", "bold"], "NEW");
-			} else if (category === "migration" && !lockfile.appliedMigrations.includes(name)) {
+			} else if (
+				category === "migration" &&
+				!allNames.every((name) => lockfile.appliedMigrations.includes(name))
+			) {
 				prefix = styleText(["yellow", "bold"], "APPLY");
 			}
 

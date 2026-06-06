@@ -7,9 +7,10 @@ import { regex } from "arktype";
 import { x } from "tinyexec";
 
 import { tokenizeArgs } from "../args-tokenizer";
-import { PICCO_DIR } from "../constants";
+import { CHANGE_CATEGORIES, PICCO_DIR } from "../constants";
 import { Lockfile } from "../lockfile";
 import {
+	deduplicatePiccologsByPresets,
 	formatPiccologSummary,
 	gatherPiccologs,
 	highlight,
@@ -125,9 +126,10 @@ export async function apply(cwd: string) {
 		return;
 	}
 
-	const applicableMigrations = piccologs
-		.migration!.filter(({ name }) => applicableMigrationNames.has(name))
-		.toSorted((a, b) => a.createdAt.valueOf() - b.createdAt.valueOf());
+	const applicableMigrations = deduplicatePiccologsByPresets(
+		piccologs.migration!.filter(({ name }) => applicableMigrationNames.has(name)),
+		CHANGE_CATEGORIES.find(({ key }) => key === "migration")!,
+	);
 	const appliedMigrationNames: string[] = [];
 
 	for (const migration of applicableMigrations) {
@@ -143,7 +145,10 @@ export async function apply(cwd: string) {
 			}
 
 			if (applyAction === "mark-as-applied") {
-				appliedMigrationNames.push(migration.name);
+				appliedMigrationNames.push(
+					migration.name,
+					...migration.duplicates.map(({ name }) => name),
+				);
 			}
 
 			continue;
@@ -172,15 +177,18 @@ export async function apply(cwd: string) {
 		}
 
 		if (wereAllMigrationStepsSuccessful) {
-			appliedMigrationNames.push(migration.name);
+			appliedMigrationNames.push(
+				migration.name,
+				...migration.duplicates.map(({ name }) => name),
+			);
 		}
 	}
 
 	lockfile.addToAppliedMigrations(appliedMigrationNames);
 
 	const result = highlight(
-		`${appliedMigrationNames.length} ouf of ${applicableMigrations.length}`,
+		`${appliedMigrationNames.length} ouf of ${applicableMigrationNames.size}`,
 	);
 
-	outro(`Applied ${result} migration${applicableMigrations.length === 1 ? "" : "s"}`);
+	outro(`Applied ${result} migration${applicableMigrationNames.size === 1 ? "" : "s"}`);
 }
