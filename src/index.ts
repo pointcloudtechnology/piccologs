@@ -4,6 +4,7 @@ import { add } from "./commands/add";
 import { apply } from "./commands/apply";
 import { init } from "./commands/init";
 import { list } from "./commands/list";
+import { status } from "./commands/status";
 import { version } from "./commands/version";
 
 async function run() {
@@ -37,8 +38,14 @@ async function run() {
 			await apply(rootDir);
 			break;
 
+		case "status":
+			const useJsonOutput = argv.slice(3).includes("--json");
+
+			await status(rootDir, useJsonOutput);
+			break;
+
 		default:
-			console.log("usage: picco <init|add|version|list|apply>");
+			console.log("usage: picco <init|add|version|list|apply|status>");
 			exit(1);
 	}
 }
