@@ -1,10 +1,15 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import { type } from "arktype";
 
+import { getAllPiccologPaths } from "./commands/common";
+import { CHANGELOG_FILE_NAME } from "./constants";
+
 const LockfileData = type({
 	version: "number.integer",
+	changelogHash: "string.hex",
 	knownLogs: "string[]",
 	appliedMigrations: "string[]",
 });
@@ -42,6 +47,7 @@ export class Lockfile {
 		return new Lockfile(
 			{
 				version: 1,
+				changelogHash: "",
 				knownLogs: [],
 				appliedMigrations: [],
 			},
@@ -50,6 +56,8 @@ export class Lockfile {
 	}
 
 	static async readFromFile(piccoPath: string): Promise<Lockfile> {
+		let lockfile: Lockfile;
+
 		try {
 			const fileContents = await readFile(resolve(piccoPath, this.FILE_NAME), {
 				encoding: "utf8",
@@ -57,13 +65,25 @@ export class Lockfile {
 			const parsedContents = parseLockfile(fileContents);
 
 			if (parsedContents instanceof type.errors) {
-				return Lockfile.default(piccoPath);
+				lockfile = Lockfile.default(piccoPath);
+			} else {
+				lockfile = new Lockfile(parsedContents, piccoPath);
 			}
 
-			return new Lockfile(parsedContents, piccoPath);
+			const changelogInfo = await stat(resolve(piccoPath, "..", CHANGELOG_FILE_NAME));
+			const changelogHash = createHash("sha256")
+				.update(changelogInfo.size.toString())
+				.digest("hex");
+
+			if (lockfile.#data.changelogHash !== changelogHash) {
+				await lockfile.#pruneAllLogs();
+				lockfile.#data.changelogHash = changelogHash;
+			}
 		} catch {
-			return Lockfile.default(piccoPath);
+			lockfile = Lockfile.default(piccoPath);
 		}
+
+		return lockfile;
 	}
 
 	async writeToFile(): Promise<void> {
@@ -99,5 +119,16 @@ export class Lockfile {
 	clearAllLogs(): void {
 		this.#data.knownLogs = [];
 		this.#data.appliedMigrations = [];
+	}
+
+	async #pruneAllLogs(): Promise<void> {
+		const piccologPaths = await getAllPiccologPaths(this.#path);
+
+		this.#data.knownLogs = this.#data.knownLogs.filter((logPath) =>
+			piccologPaths.includes(logPath),
+		);
+		this.#data.appliedMigrations = this.#data.appliedMigrations.filter((logPath) =>
+			piccologPaths.includes(logPath),
+		);
 	}
 }

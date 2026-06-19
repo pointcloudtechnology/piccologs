@@ -2,6 +2,8 @@ import type { Prettify } from "./utility";
 
 export const PICCO_DIR = ".piccologs";
 
+export const CHANGELOG_FILE_NAME = "CHANGELOG.md";
+
 type ChangeCategoryDefinition = {
 	key: string;
 	name: string;

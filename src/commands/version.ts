@@ -3,7 +3,7 @@ import { resolve } from "node:path";
 
 import * as prompts from "@clack/prompts";
 
-import { PICCO_DIR } from "../constants";
+import { CHANGELOG_FILE_NAME, PICCO_DIR } from "../constants";
 import { Lockfile } from "../lockfile";
 import {
 	buildChangelog,
@@ -26,8 +26,8 @@ function getDateVersion(): string {
 }
 
 async function writeChangeLog(cwd: string, releaseLog: string) {
-	const changelogPath = resolve(cwd, "CHANGELOG.md");
-	const tempPath = resolve(cwd, "_CHANGELOG.md.temp");
+	const changelogPath = resolve(cwd, CHANGELOG_FILE_NAME);
+	const tempPath = resolve(cwd, `_${CHANGELOG_FILE_NAME}.temp`);
 	const insertMarker = /## \[.+\]/;
 	let isReleaseLogWritten = false;
 
@@ -93,7 +93,7 @@ export async function version(cwd: string) {
 
 	const spin = prompts.spinner();
 
-	spin.start("Writing to CHANGELOG.md");
+	spin.start(`Writing to ${CHANGELOG_FILE_NAME}`);
 
 	const changelog = buildChangelog(piccologs, {
 		formatChangelogHeading: () => `## [${versionTag}]\n\n`,
@@ -110,7 +110,7 @@ export async function version(cwd: string) {
 
 	spin.clear();
 
-	outro(`Release [${highlight(versionTag)}] written to ${hyperlink(`CHANGELOG.md`)}!`);
+	outro(`Release [${highlight(versionTag)}] written to ${hyperlink(CHANGELOG_FILE_NAME)}!`);
 
 	lockfile.clearAllLogs();
 }
