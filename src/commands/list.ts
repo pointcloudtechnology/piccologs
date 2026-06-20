@@ -1,5 +1,4 @@
 import { resolve } from "node:path";
-import { styleText } from "node:util";
 
 import * as prompts from "@clack/prompts";
 
@@ -22,9 +21,9 @@ function getCategoriesToLog(
 		const categoryPluralized = unknownCategories.size > 1 ? "categories" : "category";
 
 		prompts.log.warn(
-			styleText(
-				"yellow",
+			highlight(
 				`Ignoring unknown ${categoryPluralized} ${stringifyCategories(unknownCategories)}\n`,
+				"warning",
 			) + `Valid categories are: ${stringifyCategories(allCategories)}`,
 		);
 	}
@@ -67,12 +66,12 @@ export async function list(cwd: string, categories: string[]) {
 			let text = `${summary + (pullRequest ? ` (#${pullRequest})` : "")}`;
 
 			if (!allNames.every((name) => lockfile.knownLogs.includes(name))) {
-				prefix = styleText(["cyan", "bold"], "NEW");
+				prefix = highlight("NEW", "newLog");
 			} else if (
 				category === "migration" &&
 				!allNames.every((name) => lockfile.appliedMigrations.includes(name))
 			) {
-				prefix = styleText(["yellow", "bold"], "APPLY");
+				prefix = highlight("APPLY", "migration");
 			}
 
 			if (prefix.length === 0) {

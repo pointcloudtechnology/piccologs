@@ -1,6 +1,5 @@
 import { resolve } from "node:path";
 import { setTimeout } from "node:timers/promises";
-import { styleText } from "node:util";
 
 import * as prompts from "@clack/prompts";
 import { regex } from "arktype";
@@ -80,7 +79,7 @@ async function runCommand(command: string) {
 			await setTimeout(5000);
 		}
 
-		log.error(styleText(["red"], `Command ${highlight(command)} failed`));
+		log.error(highlight(`Command ${highlight(command)} failed`, "error"));
 
 		return false;
 	}
@@ -93,7 +92,7 @@ async function runCommand(command: string) {
 	}
 
 	log.success(
-		styleText(["green"], `Finished running command ${highlight(command)} successfully`),
+		highlight(`Finished running command ${highlight(command)} successfully`, "success"),
 	);
 
 	return true;
@@ -111,7 +110,7 @@ export async function apply(cwd: string) {
 
 	if (!configFile.categories.some(({ key }) => key === MIGRATION_KEY)) {
 		prompts.log.error(
-			styleText("red", `Could not find category with key "migration" in config file`),
+			highlight(`Could not find category with key "migration" in config file`, "error"),
 		);
 		outro();
 		return;

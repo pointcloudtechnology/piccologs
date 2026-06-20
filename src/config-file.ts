@@ -1,12 +1,11 @@
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { styleText } from "node:util";
 
 import * as prompts from "@clack/prompts";
 import { type } from "arktype";
 
-import { logError, onCancel } from "./commands/common";
+import { highlight, logError, onCancel } from "./commands/common";
 
 const ConfigFileData = type({
 	$schema: "string",
@@ -113,9 +112,9 @@ export class ConfigFile {
 
 			if (!existsSync(configPath)) {
 				prompts.log.warn(
-					styleText(
-						"yellow",
+					highlight(
 						`Could not read config file: attempted to read "${configPath}" but file not found. Falling back to default config.`,
+						"warning",
 					),
 				);
 

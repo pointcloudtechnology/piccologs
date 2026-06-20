@@ -1,12 +1,11 @@
 import { resolve } from "node:path";
-import { styleText } from "node:util";
 
 import * as prompts from "@clack/prompts";
 
 import { ConfigFile } from "../config-file";
 import { MIGRATION_KEY, PICCO_DIR } from "../constants";
 import { Lockfile } from "../lockfile";
-import { gatherPiccologs, getAllPiccologPaths, intro, outro } from "./common";
+import { gatherPiccologs, getAllPiccologPaths, highlight, intro, outro } from "./common";
 
 type StatusInfo = {
 	newLogs: number;
@@ -53,7 +52,7 @@ export async function status(cwd: string, useJsonOutput: boolean) {
 	let statusMessage = "";
 
 	if (statusInfo.newLogs > 0) {
-		statusMessage += `${styleText(["cyan", "bold"], statusInfo.newLogs + " new")} piccologs available`;
+		statusMessage += `${highlight(statusInfo.newLogs + " new", "newLog")} piccologs available`;
 	}
 
 	if (statusInfo.applicableMigrations) {
@@ -61,7 +60,7 @@ export async function status(cwd: string, useJsonOutput: boolean) {
 			statusMessage += "\n";
 		}
 
-		statusMessage += `${styleText(["yellow", "bold"], statusInfo.applicableMigrations + " applicable")} migrations available`;
+		statusMessage += `${highlight(statusInfo.applicableMigrations + " applicable", "migration")} migrations available`;
 	}
 
 	prompts.log.info(statusMessage || "You are up to date!");

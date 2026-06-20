@@ -8,15 +8,26 @@ import * as prompts from "@clack/prompts";
 import { ChangeCategories, ChangeCategory } from "../config-file";
 import { parsePiccoLog, type Piccolog } from "../parser";
 
+const HIGHLIGHT_STYLES = {
+	default: ["blue", "bold"],
+	success: "green",
+	warning: "yellow",
+	error: ["red", "bold"],
+	newLog: ["cyan", "bold"],
+	migration: ["yellow", "bold"],
+	intro: ["bgBlue", "black", "bold"],
+	outro: ["green", "italic"],
+} as const satisfies Record<string, Parameters<typeof styleText>[0]>;
+
 export function intro(command: string): void {
-	prompts.intro(styleText(["bgBlue", "black", "bold"], ` picco ${command} `));
+	prompts.intro(highlight(` picco ${command} `, "intro"));
 }
 
 export function outro(message?: string): void {
 	if (message) {
 		prompts.outro(message);
 	} else {
-		prompts.outro(styleText(["green", "italic"], "Have a nice day!"));
+		prompts.outro(highlight("Have a nice day!", "outro"));
 	}
 }
 
@@ -25,8 +36,8 @@ export function onCancel(): never {
 	exit(0);
 }
 
-export function highlight(text: string): string {
-	return styleText(["blue", "bold"], text);
+export function highlight(text: string, style: keyof typeof HIGHLIGHT_STYLES = "default"): string {
+	return styleText(HIGHLIGHT_STYLES[style], text);
 }
 
 export function darken(text: string): string {
@@ -38,7 +49,7 @@ export function hyperlink(text: string): string {
 }
 
 export function logError(message: string, context?: { fileName?: string; content: string }): void {
-	let errorMessage = styleText(["red", "bold"], message) + "\n";
+	let errorMessage = highlight(message, "error") + "\n";
 
 	if (context) {
 		if (context.fileName) {
