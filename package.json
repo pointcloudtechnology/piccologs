@@ -16,7 +16,8 @@
 	},
 	"files": [
 		"dist",
-		"index.js"
+		"index.js",
+		"config-schema.json"
 	],
 	"type": "module",
 	"scripts": {

@@ -1,17 +1,19 @@
 import { extractYaml, test as hasFrontMatter } from "@std/front-matter";
 import { type } from "arktype";
 
-import { CHANGE_CATEGORIES } from "./constants";
+import { ChangeCategories } from "./config-file";
 import type { Prettify } from "./utility";
 
-const Metadata = type({
-	category: type.enumerated(...CHANGE_CATEGORIES.map(({ key }) => key)),
-	pullRequest: "number.integer?",
-	createdAt: "Date?",
-});
+function buildMetadataType(categories: ChangeCategories) {
+	return type({
+		category: type.enumerated(...categories.map(({ key }) => key)),
+		pullRequest: "number.integer?",
+		createdAt: "Date?",
+	});
+}
 
 type ParsedPiccolog = Prettify<
-	typeof Metadata.infer & {
+	ReturnType<typeof buildMetadataType>["infer"] & {
 		summary: string[];
 	}
 >;
@@ -23,14 +25,14 @@ export type Piccolog = Prettify<
 	}
 >;
 
-export function parsePiccoLog(logContents: string): ParsedPiccolog {
+export function parsePiccoLog(categories: ChangeCategories, logContents: string): ParsedPiccolog {
 	if (!hasFrontMatter(logContents)) {
 		throw new Error(`Failed to parse piccolog: invalid frontmatter`);
 	}
 
 	const { attrs, body } = extractYaml(logContents);
 
-	const metadata = Metadata(attrs);
+	const metadata = buildMetadataType(categories)(attrs);
 	const summary = body.trim().split("\n");
 
 	if (metadata instanceof type.errors) {

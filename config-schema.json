@@ -1,0 +1,59 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://github.com/pointcloudtechnology/piccologs/blob/v4.0.0/config-schema.json",
+	"title": "Piccologs Config File",
+	"type": "object",
+	"properties": {
+		"$schema": {
+			"type": "string"
+		},
+		"categories": {
+			"description": "List of change categories",
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"key": {
+						"description": "Unique identifier for the category",
+						"type": "string",
+						"minLength": 1
+					},
+					"name": {
+						"description": "Display name of the category",
+						"type": "string",
+						"minLength": 1
+					},
+					"icon": {
+						"description": "Symbol that is used as heading prefix in the generated changelog",
+						"type": "string"
+					},
+					"placeholder": {
+						"description": "Placeholder text that is shown as hint in the `picco add` command",
+						"type": "string"
+					},
+					"pullRequest": {
+						"description": "Setting to show or hide an additional prompt for a pull request number in the `picco add` command",
+						"enum": ["required", "optional", "none"],
+						"default": "none"
+					},
+					"presets": {
+						"description": "List of preset texts that are displayed as options for the summary prompt in the `picco add` command. This allows users to quickly select common texts instead of typing them manually.",
+						"type": "array",
+						"items": {
+							"type": "string",
+							"minLength": 1
+						},
+						"minItems": 1,
+						"uniqueItems": true
+					}
+				},
+				"required": ["key", "name"],
+				"additionalProperties": false
+			},
+			"minItems": 1,
+			"uniqueItems": true
+		}
+	},
+	"required": ["categories"],
+	"additionalProperties": false
+}

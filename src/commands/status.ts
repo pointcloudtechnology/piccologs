@@ -3,56 +3,68 @@ import { styleText } from "node:util";
 
 import * as prompts from "@clack/prompts";
 
-import { PICCO_DIR } from "../constants";
+import { ConfigFile } from "../config-file";
+import { MIGRATION_KEY, PICCO_DIR } from "../constants";
 import { Lockfile } from "../lockfile";
 import { gatherPiccologs, getAllPiccologPaths, intro, outro } from "./common";
+
+type StatusInfo = {
+	newLogs: number;
+	applicableMigrations?: number;
+};
 
 /**
  * @param cwd Current working directory
  * @param useJsonOutput Whether the information should be pretty-printed or printed as JSON
  */
 export async function status(cwd: string, useJsonOutput: boolean) {
+	if (!useJsonOutput) {
+		intro("status");
+	}
+
 	const piccoPath = resolve(cwd, PICCO_DIR);
 	const piccologNames = await getAllPiccologPaths(piccoPath);
+	const configFile = await ConfigFile.readFromFile(piccoPath);
 	await using lockfile = await Lockfile.readFromFile(piccoPath);
-	const piccologs = await gatherPiccologs({ piccoPath });
+	const piccologs = await gatherPiccologs({ piccoPath, categories: configFile.categories });
 
 	if (!piccologs) {
 		return;
 	}
 
 	const newPiccologs = new Set(piccologNames).difference(new Set(lockfile.knownLogs));
-	const applicableMigrationNames = new Set(
-		piccologs.migration?.map(({ name }) => name) ?? [],
-	).difference(new Set(lockfile.appliedMigrations));
+	const statusInfo: StatusInfo = {
+		newLogs: newPiccologs.size,
+	};
+
+	if (piccologs[MIGRATION_KEY]) {
+		const applicableMigrationNames = new Set(
+			piccologs[MIGRATION_KEY]!.map(({ name }) => name),
+		).difference(new Set(lockfile.appliedMigrations));
+
+		statusInfo.applicableMigrations = applicableMigrationNames.size;
+	}
 
 	if (useJsonOutput) {
-		console.log(
-			JSON.stringify({
-				newLogs: newPiccologs.size,
-				applicableMigrations: applicableMigrationNames.size,
-			}),
-		);
+		console.log(JSON.stringify(statusInfo));
 		return;
 	}
 
-	intro("status");
-
 	let statusMessage = "";
 
-	if (newPiccologs.size > 0) {
-		statusMessage += `${styleText(["cyan", "bold"], newPiccologs.size + " new")} piccologs available`;
+	if (statusInfo.newLogs > 0) {
+		statusMessage += `${styleText(["cyan", "bold"], statusInfo.newLogs + " new")} piccologs available`;
 	}
 
-	if (applicableMigrationNames.size > 0) {
+	if (statusInfo.applicableMigrations) {
 		if (statusMessage.length > 0) {
 			statusMessage += "\n";
 		}
 
-		statusMessage += `${styleText(["yellow", "bold"], applicableMigrationNames.size + " applicable")} migrations available`;
+		statusMessage += `${styleText(["yellow", "bold"], statusInfo.applicableMigrations + " applicable")} migrations available`;
 	}
 
-	prompts.log.info(statusMessage || "Already up to date!");
+	prompts.log.info(statusMessage || "You are up to date!");
 
 	outro();
 }

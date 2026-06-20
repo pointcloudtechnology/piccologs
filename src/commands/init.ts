@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
+import { ConfigFile } from "../config-file";
 import { PICCO_DIR } from "../constants";
 import { hyperlink } from "./common";
 
@@ -11,6 +12,7 @@ import { hyperlink } from "./common";
 export async function init(cwd: string) {
 	const piccoPath = resolve(cwd, PICCO_DIR);
 	const gitIgnoreFilePath = resolve(piccoPath, ".gitignore");
+	const configFile = ConfigFile.default(piccoPath);
 
 	if (!existsSync(piccoPath)) {
 		await mkdir(piccoPath);
@@ -18,6 +20,10 @@ export async function init(cwd: string) {
 
 	if (!existsSync(gitIgnoreFilePath)) {
 		await writeFile(gitIgnoreFilePath, ".piccolock.json");
+	}
+
+	if (!existsSync(configFile.path)) {
+		await configFile.writeToFile();
 
 		console.log(`Created directory ${hyperlink(cwd + "/" + PICCO_DIR)}`);
 	} else {

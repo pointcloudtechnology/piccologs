@@ -7,7 +7,8 @@ import { regex } from "arktype";
 import { x } from "tinyexec";
 
 import { tokenizeArgs } from "../args-tokenizer";
-import { CHANGE_CATEGORIES, PICCO_DIR } from "../constants";
+import { ConfigFile } from "../config-file";
+import { MIGRATION_KEY, PICCO_DIR } from "../constants";
 import { Lockfile } from "../lockfile";
 import {
 	deduplicatePiccologsByPresets,
@@ -102,23 +103,39 @@ async function runCommand(command: string) {
  * @param cwd Current working directory
  */
 export async function apply(cwd: string) {
+	intro("apply");
+
 	const piccoPath = resolve(cwd, PICCO_DIR);
+	const configFile = await ConfigFile.readFromFile(piccoPath);
 	await using lockfile = await Lockfile.readFromFile(piccoPath);
 
-	intro("apply");
+	if (!configFile.categories.some(({ key }) => key === MIGRATION_KEY)) {
+		prompts.log.error(
+			styleText("red", `Could not find category with key "migration" in config file`),
+		);
+		outro();
+		return;
+	}
 
 	const piccologs = await gatherPiccologs({
 		piccoPath,
-		categories: ["migration"],
+		categories: configFile.categories,
+		selectedCategories: [MIGRATION_KEY],
 	});
 
 	if (!piccologs) {
 		return;
 	}
 
-	const applicableMigrationNames = new Set(
-		piccologs.migration?.map(({ name }) => name) ?? [],
-	).difference(new Set(lockfile.appliedMigrations));
+	let applicableMigrationNames: Set<string>;
+
+	if (piccologs[MIGRATION_KEY]) {
+		applicableMigrationNames = new Set(
+			piccologs[MIGRATION_KEY]!.map(({ name }) => name),
+		).difference(new Set(lockfile.appliedMigrations));
+	} else {
+		applicableMigrationNames = new Set();
+	}
 
 	if (applicableMigrationNames.size === 0) {
 		prompts.log.info("No migration steps to apply!");
@@ -127,8 +144,8 @@ export async function apply(cwd: string) {
 	}
 
 	const applicableMigrations = deduplicatePiccologsByPresets(
-		piccologs.migration!.filter(({ name }) => applicableMigrationNames.has(name)),
-		CHANGE_CATEGORIES.find(({ key }) => key === "migration")!,
+		piccologs[MIGRATION_KEY]!.filter(({ name }) => applicableMigrationNames.has(name)),
+		configFile.categories.find(({ key }) => key === MIGRATION_KEY)!,
 	);
 	const appliedMigrationNames: string[] = [];
 
@@ -141,7 +158,7 @@ export async function apply(cwd: string) {
 			const applyAction = await promptConfirmApply(summary);
 
 			if (prompts.isCancel(applyAction)) {
-				return onCancel();
+				onCancel();
 			}
 
 			if (applyAction === "mark-as-applied") {
@@ -158,7 +175,7 @@ export async function apply(cwd: string) {
 			const commandAction = await promptRunCommand(command);
 
 			if (prompts.isCancel(commandAction)) {
-				return onCancel();
+				onCancel();
 			}
 
 			if (commandAction === "skip") {

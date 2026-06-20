@@ -3,13 +3,16 @@ import { styleText } from "node:util";
 
 import * as prompts from "@clack/prompts";
 
-import { CHANGE_CATEGORIES, type ChangeCategory, PICCO_DIR } from "../constants";
+import { ChangeCategory, ConfigFile } from "../config-file";
+import { PICCO_DIR } from "../constants";
 import { Lockfile } from "../lockfile";
+import { Piccolog } from "../parser";
 import { buildChangelog, darken, gatherPiccologs, highlight, intro, outro } from "./common";
 
-function getCategoriesToLog(requestedCategories: Set<string>): ChangeCategory["key"][] {
-	const allCategories = new Set(CHANGE_CATEGORIES.map(({ key }) => key));
-
+function getCategoriesToLog(
+	allCategories: Set<ChangeCategory["key"]>,
+	requestedCategories: Set<string>,
+): ChangeCategory["key"][] {
 	const unknownCategories = requestedCategories.difference(allCategories);
 	const knownCategories = requestedCategories.intersection(allCategories);
 
@@ -34,23 +37,28 @@ function getCategoriesToLog(requestedCategories: Set<string>): ChangeCategory["k
  * @param categories List of categories to include into the logged output
  */
 export async function list(cwd: string, categories: string[]) {
-	const piccoPath = resolve(cwd, PICCO_DIR);
-	await using lockfile = await Lockfile.readFromFile(piccoPath);
-
 	intro("list");
 
-	const categoriesToLog = getCategoriesToLog(new Set(categories));
+	const piccoPath = resolve(cwd, PICCO_DIR);
+	const configFile = await ConfigFile.readFromFile(piccoPath);
+	await using lockfile = await Lockfile.readFromFile(piccoPath);
+
+	const categoriesToLog = getCategoriesToLog(
+		new Set(configFile.categories.map(({ key }) => key)),
+		new Set(categories),
+	);
 
 	const piccologs = await gatherPiccologs({
 		piccoPath,
-		categories: categoriesToLog,
+		categories: configFile.categories,
+		selectedCategories: categoriesToLog,
 	});
 
 	if (!piccologs) {
 		return;
 	}
 
-	const changelog = buildChangelog(piccologs, {
+	const changelog = buildChangelog(configFile.categories, piccologs, {
 		formatChangelogHeading: () => "",
 		formatCategoryHeading: ({ name }) => highlight(`${name}\n`),
 		formatChange: ({ name, category, summary, pullRequest, duplicates }) => {
@@ -80,8 +88,6 @@ export async function list(cwd: string, categories: string[]) {
 	outro();
 
 	lockfile.addToKnownLogs(
-		Object.values(piccologs)
-			.flat()
-			.map(({ name }) => name),
+		(Object.values(piccologs).flat() as Piccolog[]).map(({ name }) => name),
 	);
 }

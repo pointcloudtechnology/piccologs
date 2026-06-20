@@ -5,7 +5,8 @@ import { resolve } from "node:path";
 import * as prompts from "@clack/prompts";
 import { humanId } from "human-id";
 
-import { CHANGE_CATEGORIES, type ChangeCategory, PICCO_DIR } from "../constants";
+import { ChangeCategories, ChangeCategory, ConfigFile } from "../config-file";
+import { MIGRATION_KEY, PICCO_DIR } from "../constants";
 import { Lockfile } from "../lockfile";
 import { highlight, hyperlink, intro, onCancel, outro } from "./common";
 
@@ -34,10 +35,10 @@ ${summary}
 `;
 }
 
-function promptCategory() {
+function promptCategory(categories: ChangeCategories) {
 	return prompts.autocomplete<ChangeCategory["key"]>({
 		message: `What ${highlight("category")} is your change?`,
-		options: CHANGE_CATEGORIES.map(({ key, name }) => ({ value: key, label: name })),
+		options: categories.map(({ key, name }) => ({ value: key, label: name })),
 	});
 }
 
@@ -54,7 +55,7 @@ function promptSummaryPreset(category: ChangeCategory & { presets: string[] }) {
 function promptSummary(category: ChangeCategory) {
 	return prompts.text({
 		message: `Please enter a ${highlight("summary")} of your change`,
-		placeholder: category.placeholder,
+		placeholder: category.placeholder ?? "",
 		validate(value) {
 			if (!value) {
 				return "You have to enter a summary";
@@ -96,18 +97,19 @@ function hasPresets(category: ChangeCategory): category is ChangeCategory & { pr
  * @param cwd Current working directory
  */
 export async function add(cwd: string) {
-	const piccoPath = resolve(cwd, PICCO_DIR);
-	await using lockfile = await Lockfile.readFromFile(piccoPath);
-
 	intro("add");
 
-	const categoryKey = await promptCategory();
+	const piccoPath = resolve(cwd, PICCO_DIR);
+	const configFile = await ConfigFile.readFromFile(piccoPath);
+	await using lockfile = await Lockfile.readFromFile(piccoPath);
+
+	const categoryKey = await promptCategory(configFile.categories);
 
 	if (prompts.isCancel(categoryKey)) {
-		return onCancel();
+		onCancel();
 	}
 
-	const chosenCategory = CHANGE_CATEGORIES.find(({ key }) => key === categoryKey)!;
+	const chosenCategory = configFile.categories.find(({ key }) => key === categoryKey)!;
 	let summary: string | symbol | undefined;
 
 	if (hasPresets(chosenCategory)) {
@@ -119,7 +121,7 @@ export async function add(cwd: string) {
 	}
 
 	if (prompts.isCancel(summary)) {
-		return onCancel();
+		onCancel();
 	}
 
 	let pullRequest: number | undefined;
@@ -128,7 +130,7 @@ export async function add(cwd: string) {
 		const num = await promptPullRequest(chosenCategory);
 
 		if (prompts.isCancel(num)) {
-			return onCancel();
+			onCancel();
 		}
 
 		pullRequest = num ? parseInt(num) : undefined;
@@ -150,7 +152,7 @@ export async function add(cwd: string) {
 
 	lockfile.addToKnownLogs([logFileName]);
 
-	if (categoryKey === "migration") {
+	if (categoryKey === MIGRATION_KEY) {
 		lockfile.addToAppliedMigrations([logFileName]);
 	}
 }

@@ -1,0 +1,74 @@
+{
+	"$schema": "../config-schema.json",
+	"categories": [
+		{
+			"key": "feature",
+			"name": "Features",
+			"icon": "✨",
+			"placeholder": "Implement a breathtaking, world-changing feature",
+			"pullRequest": "optional"
+		},
+		{
+			"key": "bugfix",
+			"name": "Bug Fixes",
+			"icon": "🐛",
+			"placeholder": "Fix the most complicated bug so far",
+			"pullRequest": "optional"
+		},
+		{
+			"key": "ui",
+			"name": "UI Changes",
+			"icon": "🖼️",
+			"placeholder": "Sprinkle in some fancy ANSI colors",
+			"pullRequest": "optional"
+		},
+		{
+			"key": "performance",
+			"name": "Performance Improvements",
+			"icon": "⚡️",
+			"placeholder": "Improve code to be \"blazingly fast\"™",
+			"pullRequest": "optional"
+		},
+		{
+			"key": "removal",
+			"name": "Removals",
+			"icon": "🔥",
+			"placeholder": "Remove unused code from existence",
+			"pullRequest": "optional"
+		},
+		{
+			"key": "refactor",
+			"name": "Refactoring",
+			"icon": "♻️",
+			"placeholder": "Refactor code from 5 years ago",
+			"pullRequest": "optional"
+		},
+		{
+			"key": "dependencies",
+			"name": "Dependencies",
+			"icon": "📦️",
+			"placeholder": "Update Jest from v13.0.7 -> v69.4.20",
+			"pullRequest": "optional"
+		},
+		{
+			"key": "documentation",
+			"name": "Documentation",
+			"icon": "📝",
+			"placeholder": "Add comment to remind my future-self what this code does",
+			"pullRequest": "optional"
+		},
+		{
+			"key": "other",
+			"name": "Other",
+			"icon": "💡",
+			"placeholder": "¯\\_(ツ)_/¯",
+			"pullRequest": "optional"
+		},
+		{
+			"key": "migration",
+			"name": "Migration Steps",
+			"icon": "🏗",
+			"placeholder": "Run `rm -rf /`"
+		}
+	]
+}

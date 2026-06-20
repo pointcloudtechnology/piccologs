@@ -5,7 +5,7 @@ import { styleText } from "node:util";
 
 import * as prompts from "@clack/prompts";
 
-import { CHANGE_CATEGORIES, type ChangeCategory } from "../constants";
+import { ChangeCategories, ChangeCategory } from "../config-file";
 import { parsePiccoLog, type Piccolog } from "../parser";
 
 export function intro(command: string): void {
@@ -20,7 +20,7 @@ export function outro(message?: string): void {
 	}
 }
 
-export function onCancel(): void {
+export function onCancel(): never {
 	prompts.cancel("Have a nice day!");
 	exit(0);
 }
@@ -63,9 +63,14 @@ export async function getAllPiccologPaths(piccoPath: string): Promise<string[]> 
 
 export async function gatherPiccologs(options: {
 	piccoPath: string;
-	categories?: ChangeCategory["key"][];
+	categories: ChangeCategories;
+	selectedCategories?: ChangeCategory["key"][];
 }): Promise<Partial<Record<ChangeCategory["key"], Piccolog[]>> | undefined> {
-	const { piccoPath, categories = CHANGE_CATEGORIES.map(({ key }) => key) } = options;
+	const {
+		piccoPath,
+		categories,
+		selectedCategories = categories.map(({ key }) => key),
+	} = options;
 	const piccologNames = await getAllPiccologPaths(piccoPath);
 	const piccologs: Piccolog[] = [];
 
@@ -73,9 +78,9 @@ export async function gatherPiccologs(options: {
 		const logContents = await readFile(resolve(piccoPath, logName), { encoding: "utf8" });
 
 		try {
-			const piccolog = parsePiccoLog(logContents);
+			const piccolog = parsePiccoLog(categories, logContents);
 
-			if (!categories.includes(piccolog.category)) {
+			if (!selectedCategories.includes(piccolog.category)) {
 				continue;
 			}
 
@@ -131,6 +136,7 @@ export function deduplicatePiccologsByPresets(
 }
 
 export function buildChangelog(
+	categories: ChangeCategories,
 	piccologs: Partial<Record<ChangeCategory["key"], Piccolog[]>>,
 	formatters: {
 		formatChangelogHeading: () => string;
@@ -140,7 +146,7 @@ export function buildChangelog(
 ): string {
 	let changelog = formatters.formatChangelogHeading();
 
-	for (const category of CHANGE_CATEGORIES) {
+	for (const category of categories) {
 		if (!piccologs[category.key]) {
 			continue;
 		}

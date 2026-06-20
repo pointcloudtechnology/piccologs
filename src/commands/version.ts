@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 import * as prompts from "@clack/prompts";
 
+import { ConfigFile } from "../config-file";
 import { CHANGELOG_FILE_NAME, PICCO_DIR } from "../constants";
 import { Lockfile } from "../lockfile";
 import {
@@ -67,11 +68,12 @@ function promptVersion() {
  * @param cwd Current working directory
  */
 export async function version(cwd: string) {
+	intro("version");
+
 	const piccoPath = resolve(cwd, PICCO_DIR);
 	const piccologNames = await getAllPiccologPaths(piccoPath);
+	const configFile = await ConfigFile.readFromFile(piccoPath);
 	await using lockfile = await Lockfile.readFromFile(piccoPath);
-
-	intro("version");
 
 	if (piccologNames.length === 0) {
 		prompts.log.warn("No piccologs found, skipping changelog generation");
@@ -85,7 +87,7 @@ export async function version(cwd: string) {
 		return onCancel();
 	}
 
-	const piccologs = await gatherPiccologs({ piccoPath });
+	const piccologs = await gatherPiccologs({ piccoPath, categories: configFile.categories });
 
 	if (!piccologs) {
 		return;
@@ -95,9 +97,10 @@ export async function version(cwd: string) {
 
 	spin.start(`Writing to ${CHANGELOG_FILE_NAME}`);
 
-	const changelog = buildChangelog(piccologs, {
+	const changelog = buildChangelog(configFile.categories, piccologs, {
 		formatChangelogHeading: () => `## [${versionTag}]\n\n`,
-		formatCategoryHeading: ({ icon, name }) => `### ${icon} ${name}\n\n`,
+		formatCategoryHeading: ({ icon, name }) =>
+			icon ? `### ${icon} ${name}\n\n` : `### ${name}\n\n`,
 		formatChange: ({ summary, pullRequest }) =>
 			`- ${summary + (pullRequest ? ` (#${pullRequest})` : "")}`,
 	});
