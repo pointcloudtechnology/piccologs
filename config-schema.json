@@ -45,6 +45,11 @@
 						},
 						"minItems": 1,
 						"uniqueItems": true
+					},
+					"allowBreaking": {
+						"description": "Whether changes of this category can be breaking",
+						"type": "boolean",
+						"default": false
 					}
 				},
 				"required": ["key", "name"],

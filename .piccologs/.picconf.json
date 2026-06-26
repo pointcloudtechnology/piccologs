@@ -6,21 +6,24 @@
 			"name": "Features",
 			"icon": "✨",
 			"placeholder": "Implement a breathtaking, world-changing feature",
-			"pullRequest": "optional"
+			"pullRequest": "optional",
+			"allowBreaking": true
 		},
 		{
 			"key": "bugfix",
 			"name": "Bug Fixes",
 			"icon": "🐛",
 			"placeholder": "Fix the most complicated bug so far",
-			"pullRequest": "optional"
+			"pullRequest": "optional",
+			"allowBreaking": true
 		},
 		{
 			"key": "ui",
 			"name": "UI Changes",
 			"icon": "🖼️",
 			"placeholder": "Sprinkle in some fancy ANSI colors",
-			"pullRequest": "optional"
+			"pullRequest": "optional",
+			"allowBreaking": true
 		},
 		{
 			"key": "performance",
@@ -34,14 +37,16 @@
 			"name": "Removals",
 			"icon": "🔥",
 			"placeholder": "Remove unused code from existence",
-			"pullRequest": "optional"
+			"pullRequest": "optional",
+			"allowBreaking": true
 		},
 		{
 			"key": "refactor",
 			"name": "Refactoring",
 			"icon": "♻️",
 			"placeholder": "Refactor code from 5 years ago",
-			"pullRequest": "optional"
+			"pullRequest": "optional",
+			"allowBreaking": true
 		},
 		{
 			"key": "dependencies",

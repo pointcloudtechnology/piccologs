@@ -1,5 +1,6 @@
 ---
 category: feature
+isBreaking: true
 createdAt: 2026-06-20T09:26:07.496Z
 ---
 

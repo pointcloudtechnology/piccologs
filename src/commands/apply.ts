@@ -149,7 +149,7 @@ export async function apply(cwd: string) {
 	const appliedMigrationNames: string[] = [];
 
 	for (const migration of applicableMigrations) {
-		const summary = formatPiccologSummary(migration);
+		const summary = formatPiccologSummary(migration.summary);
 		const runnableCommands = getRunnableCommands(summary);
 		let wereAllMigrationStepsSuccessful = true;
 

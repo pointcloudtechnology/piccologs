@@ -17,6 +17,7 @@ const ConfigFileData = type({
 			placeholder: "string?",
 			pullRequest: "'required' | 'optional' | 'none' = 'none'",
 			presets: "string[]?",
+			allowBreaking: "boolean = false",
 		},
 		"[]",
 	).narrow((data, ctx) => {
@@ -78,6 +79,7 @@ export class ConfigFile {
 						icon: "✨",
 						placeholder: "Implement a breathtaking, world-changing feature",
 						pullRequest: "required",
+						allowBreaking: true,
 					},
 					{
 						key: "bugfix" as ChangeCategory["key"],
@@ -85,6 +87,7 @@ export class ConfigFile {
 						icon: "🐛",
 						placeholder: "Fix the most complicated bug so far",
 						pullRequest: "required",
+						allowBreaking: true,
 					},
 					{
 						key: "refactor" as ChangeCategory["key"],
@@ -92,6 +95,7 @@ export class ConfigFile {
 						icon: "♻️",
 						placeholder: "Refactor code from 5 years ago",
 						pullRequest: "required",
+						allowBreaking: true,
 					},
 					{
 						key: "migration" as ChangeCategory["key"],
@@ -99,6 +103,7 @@ export class ConfigFile {
 						icon: "🏗",
 						placeholder: "Run `rm -rf /`",
 						pullRequest: "none",
+						allowBreaking: false,
 					},
 				],
 			},

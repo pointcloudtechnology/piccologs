@@ -13,8 +13,10 @@ const HIGHLIGHT_STYLES = {
 	success: "green",
 	warning: "yellow",
 	error: ["red", "bold"],
+	subtle: ["gray"],
 	newLog: ["cyan", "bold"],
 	migration: ["yellow", "bold"],
+	breakingChange: ["red", "bold"],
 	intro: ["bgBlue", "black", "bold"],
 	outro: ["green", "italic"],
 } as const satisfies Record<string, Parameters<typeof styleText>[0]>;
@@ -38,10 +40,6 @@ export function onCancel(): never {
 
 export function highlight(text: string, style: keyof typeof HIGHLIGHT_STYLES = "default"): string {
 	return styleText(HIGHLIGHT_STYLES[style], text);
-}
-
-export function darken(text: string): string {
-	return styleText(["gray"], text);
 }
 
 export function hyperlink(text: string): string {
@@ -174,6 +172,6 @@ export function buildChangelog(
 	return changelog;
 }
 
-export function formatPiccologSummary(piccolog: Piccolog): string {
-	return piccolog.summary.join(" ");
+export function formatPiccologSummary(summary: Piccolog["summary"]): string {
+	return summary.join(" ");
 }

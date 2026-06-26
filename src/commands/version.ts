@@ -3,9 +3,10 @@ import { resolve } from "node:path";
 
 import * as prompts from "@clack/prompts";
 
-import { ConfigFile } from "../config-file";
+import { ChangeCategories, ChangeCategory, ConfigFile } from "../config-file";
 import { CHANGELOG_FILE_NAME, PICCO_DIR } from "../constants";
 import { Lockfile } from "../lockfile";
+import { Piccolog } from "../parser";
 import {
 	buildChangelog,
 	gatherPiccologs,
@@ -16,6 +17,8 @@ import {
 	onCancel,
 	outro,
 } from "./common";
+
+const BREAKING_KEY = "breaking" as ChangeCategory["key"];
 
 function getDateVersion(): string {
 	const now = new Date();
@@ -97,12 +100,37 @@ export async function version(cwd: string) {
 
 	spin.start(`Writing to ${CHANGELOG_FILE_NAME}`);
 
-	const changelog = buildChangelog(configFile.categories, piccologs, {
+	const breakingChanges = (Object.values(piccologs).flat() as Piccolog[])
+		.filter(({ isBreaking }) => isBreaking)
+		.map((piccolog) => ({ ...piccolog, category: BREAKING_KEY }));
+	const categories = (
+		breakingChanges.length > 0
+			? ([
+					{
+						key: BREAKING_KEY,
+						name: "Breaking Changes",
+						icon: "💥",
+					},
+					...configFile.categories,
+				] as ChangeCategories)
+			: configFile.categories
+	) satisfies ChangeCategories;
+
+	piccologs[BREAKING_KEY] = breakingChanges;
+
+	const changelog = buildChangelog(categories, piccologs, {
 		formatChangelogHeading: () => `## [${versionTag}]\n\n`,
 		formatCategoryHeading: ({ icon, name }) =>
 			icon ? `### ${icon} ${name}\n\n` : `### ${name}\n\n`,
-		formatChange: ({ summary, pullRequest }) =>
-			`- ${summary + (pullRequest ? ` (#${pullRequest})` : "")}`,
+		formatChange: ({ category, summary, pullRequest, isBreaking }) => {
+			const components = [
+				isBreaking && category !== BREAKING_KEY && "💥",
+				summary,
+				pullRequest && `(#${pullRequest})`,
+			];
+
+			return `- ${components.filter(Boolean).join(" ")}`;
+		},
 	});
 
 	await writeChangeLog(cwd, changelog);

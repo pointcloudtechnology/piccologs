@@ -9,6 +9,7 @@ function buildMetadataType(categories: ChangeCategories) {
 		category: type.enumerated(...categories.map(({ key }) => key)),
 		pullRequest: "number.integer?",
 		createdAt: "Date?",
+		isBreaking: "boolean?",
 	});
 }
 

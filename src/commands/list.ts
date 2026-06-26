@@ -6,7 +6,14 @@ import { ChangeCategory, ConfigFile } from "../config-file";
 import { PICCO_DIR } from "../constants";
 import { Lockfile } from "../lockfile";
 import { Piccolog } from "../parser";
-import { buildChangelog, darken, gatherPiccologs, highlight, intro, outro } from "./common";
+import {
+	buildChangelog,
+	formatPiccologSummary,
+	gatherPiccologs,
+	highlight,
+	intro,
+	outro,
+} from "./common";
 
 function getCategoriesToLog(
 	allCategories: Set<ChangeCategory["key"]>,
@@ -60,25 +67,33 @@ export async function list(cwd: string, categories: string[]) {
 	const changelog = buildChangelog(configFile.categories, piccologs, {
 		formatChangelogHeading: () => "",
 		formatCategoryHeading: ({ name }) => highlight(`${name}\n`),
-		formatChange: ({ name, category, summary, pullRequest, duplicates }) => {
+		formatChange: ({ name, category, summary, pullRequest, duplicates, isBreaking }) => {
 			const allNames = [name, ...duplicates.map(({ name }) => name)];
-			let prefix = "";
-			let text = `${summary + (pullRequest ? ` (#${pullRequest})` : "")}`;
+			const components: string[] = [];
+			let isActionable = false;
 
 			if (!allNames.every((name) => lockfile.knownLogs.includes(name))) {
-				prefix = highlight("NEW", "newLog");
+				components.push(
+					isBreaking
+						? highlight("BREAKING", "breakingChange")
+						: highlight("NEW", "newLog"),
+				);
+				isActionable = true;
 			} else if (
 				category === "migration" &&
 				!allNames.every((name) => lockfile.appliedMigrations.includes(name))
 			) {
-				prefix = highlight("APPLY", "migration");
+				components.push(highlight("APPLY", "migration"));
+				isActionable = true;
+			} else if (isBreaking) {
+				components.push("BREAKING");
 			}
 
-			if (prefix.length === 0) {
-				return darken(`• ${text}`);
-			}
+			components.push(formatPiccologSummary(summary), pullRequest ? `(#${pullRequest})` : "");
 
-			return `• ${prefix} ${text}`;
+			const text = `• ${components.filter(Boolean).join(" ")}`;
+
+			return isActionable ? text : highlight(text, "subtle");
 		},
 	});
 

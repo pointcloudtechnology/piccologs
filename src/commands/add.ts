@@ -8,6 +8,7 @@ import { humanId } from "human-id";
 import { ChangeCategories, ChangeCategory, ConfigFile } from "../config-file";
 import { MIGRATION_KEY, PICCO_DIR } from "../constants";
 import { Lockfile } from "../lockfile";
+import { Piccolog } from "../parser";
 import { highlight, hyperlink, intro, onCancel, outro } from "./common";
 
 const SUMMARY_PRESET_OTHER = "other";
@@ -17,13 +18,12 @@ function generateLogId() {
 }
 
 function generateLogContent(
-	category: ChangeCategory["key"],
-	summary: string,
-	pullRequest: number | undefined,
+	piccologData: Pick<Piccolog, "category" | "pullRequest" | "isBreaking"> & { summary: string },
 ) {
 	const frontmatterEntries = [
-		`category: ${category}`,
-		pullRequest ? `pullRequest: ${pullRequest}` : "",
+		`category: ${piccologData.category}`,
+		piccologData.pullRequest ? `pullRequest: ${piccologData.pullRequest}` : "",
+		piccologData.isBreaking ? `isBreaking: ${piccologData.isBreaking}` : "",
 		`createdAt: ${new Date().toISOString()}`,
 	].filter((entry) => entry.length > 0);
 
@@ -31,7 +31,7 @@ function generateLogContent(
 ${frontmatterEntries.join("\n")}
 ---
 
-${summary}
+${piccologData.summary}
 `;
 }
 
@@ -89,6 +89,13 @@ function promptPullRequest(category: ChangeCategory) {
 	});
 }
 
+function promptIsBreaking() {
+	return prompts.confirm({
+		message: "Is this a breaking change?",
+		initialValue: false,
+	});
+}
+
 function hasPresets(category: ChangeCategory): category is ChangeCategory & { presets: string[] } {
 	return category.presets !== undefined;
 }
@@ -136,6 +143,18 @@ export async function add(cwd: string) {
 		pullRequest = num ? parseInt(num) : undefined;
 	}
 
+	let isBreaking: boolean | undefined;
+
+	if (chosenCategory.allowBreaking) {
+		const breaking = await promptIsBreaking();
+
+		if (prompts.isCancel(breaking)) {
+			onCancel();
+		}
+
+		isBreaking = breaking;
+	}
+
 	let logId = generateLogId();
 
 	// Handle the absolute unlikely case that the ID already exists
@@ -144,7 +163,12 @@ export async function add(cwd: string) {
 	}
 
 	const logFileName = `${logId}.md`;
-	const logContent = generateLogContent(categoryKey, summary.split("|").join("\n"), pullRequest);
+	const logContent = generateLogContent({
+		category: categoryKey,
+		summary: summary.split("|").join("\n"),
+		...(pullRequest !== undefined && { pullRequest }),
+		...(isBreaking !== undefined && { isBreaking }),
+	});
 
 	await writeFile(resolve(piccoPath, logFileName), logContent);
 
