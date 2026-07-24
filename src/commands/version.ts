@@ -20,11 +20,10 @@ import {
 
 const BREAKING_KEY = "breaking" as ChangeCategory["key"];
 
-function getDateVersion(): string {
-	const now = new Date();
-	const year = now.getFullYear();
-	const month = (now.getMonth() + 1).toString().padStart(2, "0");
-	const day = now.getDate().toString().padStart(2, "0");
+function formatDateVersion(date: Date): string {
+	const year = date.getFullYear();
+	const month = (date.getMonth() + 1).toString().padStart(2, "0");
+	const day = date.getDate().toString().padStart(2, "0");
 
 	return `${year}-${month}-${day}`;
 }
@@ -57,13 +56,12 @@ async function writeChangeLog(cwd: string, releaseLog: string) {
 	await rm(tempPath);
 }
 
-function promptVersion() {
-	const defaultVersion = getDateVersion();
-
-	return prompts.text({
+function promptForDateVersion() {
+	return prompts.date({
 		message: `What should be the next version?`,
-		defaultValue: defaultVersion,
-		placeholder: defaultVersion,
+		defaultValue: new Date(),
+		format: "YMD",
+		separator: "-",
 	});
 }
 
@@ -84,12 +82,13 @@ export async function version(cwd: string) {
 		return;
 	}
 
-	const versionTag = await promptVersion();
+	const dateVersion = await promptForDateVersion();
 
-	if (prompts.isCancel(versionTag)) {
+	if (prompts.isCancel(dateVersion)) {
 		return onCancel();
 	}
 
+	const versionTag = formatDateVersion(dateVersion);
 	const piccologs = await gatherPiccologs({ piccoPath, categories: configFile.categories });
 
 	if (!piccologs) {
