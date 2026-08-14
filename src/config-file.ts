@@ -9,6 +9,7 @@ import { highlight, logError, onCancel } from "./commands/common";
 
 const ConfigFileData = type({
 	$schema: "string",
+	versionScheme: "'semver' | 'date' | 'custom'",
 	categories: type(
 		{
 			key: "string#CategoryKey",
@@ -68,10 +69,15 @@ export class ConfigFile {
 		return resolve(this.#path, ConfigFile.FILE_NAME);
 	}
 
+	get versionScheme(): (typeof ConfigFileData.infer)["versionScheme"] {
+		return this.#data.versionScheme;
+	}
+
 	static default(piccoPath: string): ConfigFile {
 		return new ConfigFile(
 			{
 				$schema: "./node_modules/@pointcloudtechnology/piccologs/config-schema.json",
+				versionScheme: "semver",
 				categories: [
 					{
 						key: "feature" as ChangeCategory["key"],

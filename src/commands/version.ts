@@ -2,11 +2,13 @@ import { open, copyFile, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 
 import * as prompts from "@clack/prompts";
+import { type } from "arktype";
 
 import { ChangeCategories, ChangeCategory, ConfigFile } from "../config-file";
 import { CHANGELOG_FILE_NAME, PICCO_DIR } from "../constants";
 import { Lockfile } from "../lockfile";
 import { Piccolog } from "../parser";
+import { Brand } from "../utility";
 import {
 	buildChangelog,
 	gatherPiccologs,
@@ -20,12 +22,81 @@ import {
 
 const BREAKING_KEY = "breaking" as ChangeCategory["key"];
 
-function formatDateVersion(date: Date): string {
-	const year = date.getFullYear();
-	const month = (date.getMonth() + 1).toString().padStart(2, "0");
-	const day = date.getDate().toString().padStart(2, "0");
+type VersionValue = Brand<string | Date, "VersionValue">;
 
-	return `${year}-${month}-${day}`;
+type VersionPrompter<T = VersionValue> = {
+	determineNextVersion: (piccologs: Awaited<ReturnType<typeof gatherPiccologs>>) => Promise<T>;
+	promptForVersion: (nextVersion: T) => Promise<symbol | T>;
+	formatVersion: (version: T) => string;
+};
+
+const Semver = type("string.semver");
+
+function buildVersionPrompter<T extends typeof ConfigFile.prototype.versionScheme>(
+	versionScheme: T,
+): VersionPrompter {
+	switch (versionScheme) {
+		case "semver":
+			return {
+				async determineNextVersion() {
+					return "1.0.0";
+				},
+				promptForVersion(nextVersion) {
+					return prompts.text({
+						message: `What should be the next version?`,
+						placeholder: nextVersion,
+						defaultValue: nextVersion,
+						validate(value) {
+							if (value && Semver(value) instanceof type.errors) {
+								return "You have to enter a valid semantic version";
+							}
+
+							return undefined;
+						},
+					});
+				},
+				formatVersion(version) {
+					return version;
+				},
+			} satisfies VersionPrompter<string> as unknown as VersionPrompter;
+
+		case "date":
+			return {
+				async determineNextVersion() {
+					return new Date();
+				},
+				promptForVersion(nextVersion) {
+					return prompts.date({
+						message: `What should be the next version?`,
+						defaultValue: nextVersion,
+						format: "YMD",
+						separator: "-",
+					});
+				},
+				formatVersion(version) {
+					const year = version.getFullYear();
+					const month = (version.getMonth() + 1).toString().padStart(2, "0");
+					const day = version.getDate().toString().padStart(2, "0");
+
+					return `${year}-${month}-${day}`;
+				},
+			} satisfies VersionPrompter<Date> as unknown as VersionPrompter;
+
+		case "custom":
+			return {
+				async determineNextVersion() {
+					return "";
+				},
+				promptForVersion() {
+					return prompts.text({
+						message: `What should be the next version?`,
+					});
+				},
+				formatVersion(version) {
+					return version;
+				},
+			} satisfies VersionPrompter<string> as unknown as VersionPrompter;
+	}
 }
 
 async function writeChangeLog(cwd: string, releaseLog: string) {
@@ -56,15 +127,6 @@ async function writeChangeLog(cwd: string, releaseLog: string) {
 	await rm(tempPath);
 }
 
-function promptForDateVersion() {
-	return prompts.date({
-		message: `What should be the next version?`,
-		defaultValue: new Date(),
-		format: "YMD",
-		separator: "-",
-	});
-}
-
 /**
  * @param cwd Current working directory
  */
@@ -82,18 +144,21 @@ export async function version(cwd: string) {
 		return;
 	}
 
-	const dateVersion = await promptForDateVersion();
-
-	if (prompts.isCancel(dateVersion)) {
-		return onCancel();
-	}
-
-	const versionTag = formatDateVersion(dateVersion);
 	const piccologs = await gatherPiccologs({ piccoPath, categories: configFile.categories });
 
 	if (!piccologs) {
 		return;
 	}
+
+	const versionPrompter = buildVersionPrompter(configFile.versionScheme);
+	const nextVersion = await versionPrompter.determineNextVersion(piccologs);
+	const versionValue = await versionPrompter.promptForVersion(nextVersion);
+
+	if (prompts.isCancel(versionValue)) {
+		return onCancel();
+	}
+
+	const version = versionPrompter.formatVersion(versionValue);
 
 	const spin = prompts.spinner();
 
@@ -118,7 +183,7 @@ export async function version(cwd: string) {
 	piccologs[BREAKING_KEY] = breakingChanges;
 
 	const changelog = buildChangelog(categories, piccologs, {
-		formatChangelogHeading: () => `## [${versionTag}]\n\n`,
+		formatChangelogHeading: () => `## [${version}]\n\n`,
 		formatCategoryHeading: ({ icon, name }) =>
 			icon ? `### ${icon} ${name}\n\n` : `### ${name}\n\n`,
 		formatChange: ({ category, summary, pullRequest, isBreaking }) => {
@@ -140,7 +205,7 @@ export async function version(cwd: string) {
 
 	spin.clear();
 
-	outro(`Release [${highlight(versionTag)}] written to ${hyperlink(CHANGELOG_FILE_NAME)}!`);
+	outro(`Release [${highlight(version)}] written to ${hyperlink(CHANGELOG_FILE_NAME)}!`);
 
 	lockfile.clearAllLogs();
 }

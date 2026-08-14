@@ -1,5 +1,6 @@
 {
 	"$schema": "../config-schema.json",
+	"versionScheme": "semver",
 	"categories": [
 		{
 			"key": "feature",
